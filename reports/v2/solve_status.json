@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "message": "All service stages, modeled cost and procurement tie-break solved to optimality.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 25.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 1213987.5
+    },
+    {
+      "name": "procurement_quantity_tiebreak",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 2140.0
+    }
+  ],
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 58987.5,
+    "transportation": 285000.0,
+    "service_failure": 30000.0,
+    "ide": null,
+    "external_storage": null,
+    "total_modeled": 1213987.5
+  }
+}

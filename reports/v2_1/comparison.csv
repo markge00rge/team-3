@@ -1,0 +1,23 @@
+metric,scenario_a,scenario_b
+labor USD,840000.0,840000.0
+fp_holding USD,58987.5,59670.0
+transportation USD,285000.0,285000.0
+service_failure USD,30000.0,30000.0
+external_storage USD,0.0,18000.0
+total_modeled USD,1213987.5,1232670.0
+Minimum monetary cost USD,1213987.5,1213987.5
+Allowed cost ceiling USD,1213987.5,1238267.25
+Additional material-specific events,4.0,3.0
+Fixed incoming shipments (separate),3.0,3.0
+Served MSU,3070.0,3070.0
+Service %,99.19224555735056,99.19224555735056
+External block-months,0.0,4.0
+Peak tracked month-end pallets,1197.0000000000005,1372.0
+Additional A RM total (kg/EA),0.0,0.0
+Year-end A RM (kg/EA),0.0,0.0
+Additional A PM total (kg/EA),0.0,0.0
+Year-end A PM (kg/EA),75000.0,75000.0
+Additional C RM total (kg/EA),500000.0,500000.0
+Year-end C RM (kg/EA),2500.0000000009236,2500.0
+Additional C PM total (kg/EA),2875000.0,2875000.0
+Year-end C PM (kg/EA),12500.00000000001,12500.000000000233

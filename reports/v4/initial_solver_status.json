@@ -1,0 +1,50 @@
+{
+  "success": false,
+  "message": "international_order_events: aborted, maxTimeLimit; no reportable optimal solution.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 1215467.5,
+      "upper_bound": 1215467.5,
+      "relative_gap": 0.0,
+      "optimum": 1215467.5
+    },
+    {
+      "name": "international_order_events",
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "lower_bound": 1.0
+    }
+  ],
+  "minimum_cost": 1215467.5,
+  "cost_limit": 1215467.5
+}

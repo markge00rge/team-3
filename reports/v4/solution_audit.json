@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "tolerance": 1e-05,
+  "constraints_checked": 12286,
+  "variables_checked": 6663,
+  "max_violation": 2.5029294192790985e-08,
+  "violations": [],
+  "reported_monetary_cost": 1215467.5000000084,
+  "reported_international_events": 4.0,
+  "all_lexicographic_stages_optimal": false
+}

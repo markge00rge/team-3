@@ -1,0 +1,59 @@
+{
+  "success": true,
+  "message": "All service, cost, order-event and quantity stages solved to optimality.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 25.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 1213987.5
+    },
+    {
+      "name": "international_order_events",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 3.0
+    },
+    {
+      "name": "procurement_quantity_tiebreak",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 2150.0
+    },
+    {
+      "name": "cost_cleanup",
+      "status": "ok",
+      "termination": "optimal",
+      "optimum": 1232670.0
+    }
+  ],
+  "minimum_cost": 1213987.5,
+  "cost_limit": 1238267.25,
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 59670.0,
+    "transportation": 285000.0,
+    "service_failure": 30000.0,
+    "ide": null,
+    "external_storage": 18000.0,
+    "total_modeled": 1232670.0
+  }
+}

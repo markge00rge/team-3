@@ -1,0 +1,26 @@
+{
+  "v4_all_stages_optimal": false,
+  "historical_v2_1_scenario_a": {
+    "labor": 840000.0,
+    "fp_holding": 58987.5,
+    "transportation": 285000.0,
+    "service_failure": 30000.0,
+    "ide": null,
+    "external_storage": 0.0,
+    "total_modeled": 1213987.5
+  },
+  "v4_reported": {
+    "labor": 840000.0,
+    "fp_holding": 56167.50000000844,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30299.99999999995,
+    "external_storage": 0.0,
+    "total_modeled": 1215467.5000000084
+  },
+  "cost_difference_usd": 1480.000000008382,
+  "annual_demand_msu": 3095.0,
+  "annual_served_msu": 3095.0,
+  "annual_service_percent": 100.0,
+  "additional_international_events": 4.0
+}
