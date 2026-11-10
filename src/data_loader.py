@@ -123,7 +123,7 @@ def load_case(data_dir: Path | str = ROOT / "data") -> CaseData:
                              unserved_usd_per_msu=after(service, "$")))
     # Numeric rules are extracted from their source prose, with the prose retained.
     rules = dict(
-        weeks_per_month=number(rule(4)), minimum_cumulative_cd=after(rule(5), "below"),
+        weeks_per_month=after(rule(4), "="), minimum_cumulative_cd=after(rule(5), "below"),
         l2_max_changeovers=number(rule(6)), changeover_days=after(rule(6), "="),
         qualification_days=number(rule(7)), target_launch="2027-01", early_launch_allowed=True,
         peak_months=("2027-05", "2027-06", "2027-07"),

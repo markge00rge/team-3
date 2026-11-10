@@ -1,4 +1,50 @@
+# Persistent saved runs
+
+See [SAVED_RUNS_GUIDE.md](SAVED_RUNS_GUIDE.md) for named optimizations, local SQLite
+history, read-only historical configurations, two-run comparisons and exact
+Operating Expenses / Total Delivery Cost cards.
+
+# V6 update
+
+Active formulation: [V6_SCOPE.md](V6_SCOPE.md). The application supports optional
+additional-crew dismissal/retraining and six material prices. Five financial cards
+reconcile operating expense, additional A/C orders and production-linked B materials
+to Total Delivery Cost. Earlier operating-only financial totals below are historical.
+
 # P&G Venus Supply Chain Optimizer
+
+## Cairo Plant Supply Chain Optimizer — interactive Venus application
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m streamlit run app/main.py
+```
+
+Open http://localhost:8501. Run Original Case executes a **new real V5 MILP**;
+Customize Parameters opens seven prefilled sections. Dashboards, comparisons,
+CSV/Excel exports and reloadable scenario JSON use checked solver output.
+See [APP_GUIDE.md](APP_GUIDE.md) for the editable-field allowlist, locked fields,
+validation, worker execution, demonstration and limitations. “Create a New Plant”
+is Coming Next. Original source documents and historical reports are preserved.
+See [APP_VALIDATION.md](APP_VALIDATION.md) for the four real acceptance solves,
+CLI parity, genuine timeout test and final 159-test validation.
+
+
+Current backend: **V5, strict Scenario A only**. See [V5_SCOPE.md](V5_SCOPE.md),
+[ASSUMPTIONS.md](ASSUMPTIONS.md), and
+[FINAL_OPTIMIZER_READINESS.md](FINAL_OPTIMIZER_READINESS.md).
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m src.solve --output-dir reports/v5 --time-limit 180
+.\.venv\Scripts\python.exe -m src.reporting --report-dir reports/v5
+```
+
+The last command regenerates operational, cash, productivity and financial
+reports without solving. `reports/v5/solve_status.json` records actual proof
+status; a published monetary-optimal plan need not have a proven secondary
+event optimum. V4 and V2.1 below are historical baselines. The Streamlit interface
+is documented in the application section above.
 
 A Python mixed-integer linear programming (MILP) project for a P&G Venus supply chain case study over a 12-month planning horizon.
 

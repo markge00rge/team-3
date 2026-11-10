@@ -24,6 +24,15 @@ dist/
 htmlcov/
 .tox/
 .nox/
+
+# Local immutable scenario history and user-created optimization data
+app_data/
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+reports/app_runs/
 .mypy_cache/
 .ruff_cache/
 

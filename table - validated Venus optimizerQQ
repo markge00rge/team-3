@@ -1,0 +1,90 @@
+ .gitignore                                         |   31 [32m+[m
+ DATA_REVIEW.md                                     |  157 [32m+++[m
+ MODEL_SCOPE.md                                     |  344 [32m+++++[m
+ README.md                                          |  104 [32m++[m
+ V4_SCOPE.md                                        |  190 [32m+++[m
+ data/Venus_PS_Case_Study_2026.docx                 |  Bin [31m0[m -> [32m53834[m bytes
+ data/Venus_PS_Supporting_Data_2026.xlsx            |  Bin [31m0[m -> [32m18362[m bytes
+ reports/v2/b_material_consumption.csv              |   13 [32m+[m
+ reports/v2/inventory.csv                           |   37 [32m+[m
+ reports/v2/material_balances.csv                   |   49 [32m+[m
+ reports/v2/material_orders.csv                     |   49 [32m+[m
+ reports/v2/production.csv                          |   73 [32m++[m
+ reports/v2/service.csv                             |   73 [32m++[m
+ reports/v2/shipments.csv                           |  109 [32m++[m
+ reports/v2/solve_status.json                       |   45 [32m+[m
+ reports/v2/summary.txt                             |  115 [32m++[m
+ reports/v2/transport.csv                           |   37 [32m+[m
+ reports/v2_1/comparison.csv                        |   23 [32m+[m
+ reports/v2_1/comparison.md                         |   36 [32m+[m
+ reports/v2_1/console_comparison.log                |  Bin [31m0[m -> [32m59376[m bytes
+ reports/v2_1/scenario_a/b_material_consumption.csv |   13 [32m+[m
+ reports/v2_1/scenario_a/console.log                |  Bin [31m0[m -> [32m30138[m bytes
+ reports/v2_1/scenario_a/fixed_receipts.csv         |    4 [32m+[m
+ reports/v2_1/scenario_a/inventory.csv              |   37 [32m+[m
+ reports/v2_1/scenario_a/material_balances.csv      |   49 [32m+[m
+ reports/v2_1/scenario_a/material_orders.csv        |   49 [32m+[m
+ reports/v2_1/scenario_a/production.csv             |   73 [32m++[m
+ reports/v2_1/scenario_a/service.csv                |   73 [32m++[m
+ reports/v2_1/scenario_a/shipments.csv              |  109 [32m++[m
+ reports/v2_1/scenario_a/solve_status.json          |   59 [32m+[m
+ reports/v2_1/scenario_a/summary.txt                |  186 [32m+++[m
+ reports/v2_1/scenario_a/transport.csv              |   37 [32m+[m
+ reports/v2_1/scenario_a/warehouse.csv              |   13 [32m+[m
+ reports/v2_1/scenario_b/b_material_consumption.csv |   13 [32m+[m
+ reports/v2_1/scenario_b/console.log                |  Bin [31m0[m -> [32m29968[m bytes
+ reports/v2_1/scenario_b/fixed_receipts.csv         |    4 [32m+[m
+ reports/v2_1/scenario_b/inventory.csv              |   37 [32m+[m
+ reports/v2_1/scenario_b/material_balances.csv      |   49 [32m+[m
+ reports/v2_1/scenario_b/material_orders.csv        |   49 [32m+[m
+ reports/v2_1/scenario_b/production.csv             |   73 [32m++[m
+ reports/v2_1/scenario_b/service.csv                |   73 [32m++[m
+ reports/v2_1/scenario_b/shipments.csv              |  109 [32m++[m
+ reports/v2_1/scenario_b/solve_status.json          |   59 [32m+[m
+ reports/v2_1/scenario_b/summary.txt                |  185 [32m+++[m
+ reports/v2_1/scenario_b/transport.csv              |   37 [32m+[m
+ reports/v2_1/scenario_b/warehouse.csv              |   13 [32m+[m
+ reports/v4/ANALYSIS.md                             |   86 [32m++[m
+ reports/v4/FINANCIAL_RECONCILIATION.md             |  161 [32m+++[m
+ reports/v4/b_material_consumption.csv              |   13 [32m+[m
+ reports/v4/daily_material.csv                      | 1345 [32m++++++++++++++++++++[m
+ reports/v4/daily_schedule.csv                      |  673 [32m++++++++++[m
+ reports/v4/diagnostics/first_180s.log              |  Bin [31m0[m -> [32m49248[m bytes
+ reports/v4/diagnostics/initial_90s.log             |  Bin [31m0[m -> [32m2260[m bytes
+ reports/v4/diagnostics/warmstarted_180s.log        |  Bin [31m0[m -> [32m59824[m bytes
+ reports/v4/fixed_receipts.csv                      |    4 [32m+[m
+ reports/v4/historical_comparison.json              |   26 [32m+[m
+ reports/v4/initial_solver_status.json              |   50 [32m+[m
+ reports/v4/inventory.csv                           |   37 [32m+[m
+ reports/v4/line_capacity.csv                       |   25 [32m+[m
+ reports/v4/material_balances.csv                   |   49 [32m+[m
+ reports/v4/material_orders.csv                     |   49 [32m+[m
+ reports/v4/monthly_cost_breakdown.csv              |   14 [32m+[m
+ reports/v4/monthly_inventory_by_product.csv        |   37 [32m+[m
+ reports/v4/monthly_production_inventory.csv        |   14 [32m+[m
+ reports/v4/production.csv                          |   73 [32m++[m
+ reports/v4/production_by_product_month.csv         |   37 [32m+[m
+ reports/v4/service.csv                             |   73 [32m++[m
+ reports/v4/service_by_hub_month.csv                |   37 [32m+[m
+ reports/v4/shipments.csv                           |  109 [32m++[m
+ reports/v4/solution_audit.json                     |   11 [32m+[m
+ reports/v4/solve_status.json                       |   63 [32m+[m
+ reports/v4/staffing.csv                            |   25 [32m+[m
+ reports/v4/storage_peaks.csv                       |  337 [32m+++++[m
+ reports/v4/summary.txt                             |  354 [32m++++++[m
+ reports/v4/transition_ide.json                     |   51 [32m+[m
+ reports/v4/transport.csv                           |   37 [32m+[m
+ reports/v4/warehouse.csv                           |   13 [32m+[m
+ requirements.txt                                   |    5 [32m+[m
+ src/data_loader.py                                 |  272 [32m++++[m
+ src/model.py                                       |  193 [32m+++[m
+ src/reconciliation.py                              |  305 [32m+++++[m
+ src/results.py                                     |  274 [32m++++[m
+ src/scheduling.py                                  |  140 [32m++[m
+ src/solve.py                                       |  184 [32m+++[m
+ src/validation.py                                  |  126 [32m++[m
+ tests/test_data_loader.py                          |  100 [32m++[m
+ tests/test_model.py                                |  365 [32m++++++[m
+ tests/test_reconciliation.py                       |  160 [32m+++[m
+ tests/test_v4.py                                   |  293 [32m+++++[m
+ 89 files changed, 9108 insertions(+)

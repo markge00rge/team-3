@@ -1,4 +1,31 @@
-# Current model: V4 integrated Scenario A
+# Current model: V6 flexible workforce and complete material costs
+
+See [V6_SCOPE.md](V6_SCOPE.md) for the active extension and financial definitions.
+The V5/V4 and V2.1 text below is historical. New A/C orders and B production-linked
+materials now enter the monetary objective. Optional dismissal and full retraining
+after rehire are supported. Reports: `reports/v6/`. Proven service: 100%; proven
+minimum Total Delivery Cost: $10,941,467.50. The latest fresh application run proves all seven stages optimal
+(four events, zero gaps): `reports/app_runs/v6_original_resumed/`. The earlier
+V6 run with an unproven event minimum is preserved separately.
+
+---
+
+# Current model: V5 integrated Scenario A
+
+The Streamlit application now wraps this unchanged mathematical scope. See
+[APP_GUIDE.md](APP_GUIDE.md) for supported input controls and launch instructions,
+and [APP_VALIDATION.md](APP_VALIDATION.md) for real-solver acceptance results.
+
+V5 preserves V4 manufacturing/material/staffing/IDE rules and adds exact monthly
+regional priorities independently for A/C and B. Both cumulative C:D definitions
+are diagnostic metrics, not constraints. See [V5_SCOPE.md](V5_SCOPE.md), the
+central [assumptions register](ASSUMPTIONS.md), and
+[backend readiness matrix](FINAL_OPTIMIZER_READINESS.md). Current results are
+in `reports/v5/`; V4 and V2.1 below are historical, preserved baselines.
+
+---
+
+# Historical V4 integrated Scenario A
 
 The current default model optimizes qualification, L2 sequencing, optional
 crews/profile upgrades and chronological A-material scrap on exactly 28 days

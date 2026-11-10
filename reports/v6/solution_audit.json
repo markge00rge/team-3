@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "tolerance": 1e-05,
+  "constraints_checked": 12606,
+  "variables_checked": 6811,
+  "max_violation": 7.031485438346863e-08,
+  "violations": []
+}

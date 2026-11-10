@@ -70,6 +70,18 @@ def extract_results(model, *, allow_incumbent=False) -> ModelResults:
     )
     if getattr(m, "integrated_schedule", False):
         _schedule_results(m, result)
+    if getattr(m,'material_financial_model',False):
+        result.costs.update(operating_full_ide=value(m.operating_cost_full_ide),
+            ide_overlap_adjustment=value(m.ide_overlap),operating_expenses=value(m.reconciled_operating_cost),
+            a_materials=value(m.a_material_cost),c_materials=value(m.c_material_cost),b_materials=value(m.b_material_cost),
+            total_delivery_cost=value(m.total_cost),dismissal=value(m.dismissal_cost))
+        result.material_balances['new_purchased_scrap']=[value(m.a_new_scrap_month[r.material,r.month]) if r.product=='A' else 0
+            for r in result.material_balances.itertuples()]
+        result.material_orders['unit_price_usd']=[value(m.material_unit_price[r.product,r.material]) for r in result.material_orders.itertuples()]
+        result.material_orders['purchase_expense_usd']=result.material_orders.quantity*result.material_orders.unit_price_usd
+        result.b_material_consumption['rm_expense_usd']=result.b_material_consumption.rm_kg*value(m.material_unit_price['B','RM'])
+        result.b_material_consumption['pm_expense_usd']=result.b_material_consumption.pm_ea*value(m.material_unit_price['B','PM'])
+        result.b_material_consumption['material_expense_usd']=result.b_material_consumption.rm_expense_usd+result.b_material_consumption.pm_expense_usd
     return result
 
 
@@ -99,7 +111,11 @@ def _schedule_results(m, result):
                     ending=v(m.daily_material_inventory[p, k, d])))
     result.daily_material = pd.DataFrame(records)
     result.staffing = pd.DataFrame([dict(line=l, month=t, hired_crew=v(m.hire[l, t]),
-        training=v(m.hire[l, t]), upgraded=v(m.upgraded[l, t]), employed_crews=v(m.employed[l, t]),
+        training=v(m.training[l,t]) if hasattr(m,'training') else v(m.hire[l, t]),
+        dismissed_crew=v(m.dismiss[l,t]) if hasattr(m,'dismiss') else 0,
+        qualified_crew=v(m.upgraded[l,t]),upgraded=v(m.upgraded[l, t]), employed_crews=v(m.employed[l, t]),
+        dismissal_usd=v(m.crew_dismissal_fee)*v(m.dismiss[l,t]) if hasattr(m,'dismiss') else 0,
+        employed_operators=v(m.employed[l,t])*m._crew_size,
         additional_salary_usd=v(m.crew_salary*m.employed[l, t]), hiring_usd=v(m.crew_hiring_fee*m.hire[l, t])) for l in m.lines for t in m.months])
     result.line_capacity = pd.DataFrame([dict(line=l, month=t, scheduled_days=sum(v(m.operating[l, d]) for d in m.month_days[t]),
         qualification_days=sum(v(m.shutdown[d]) for d in m.month_days[t]),
@@ -108,7 +124,7 @@ def _schedule_results(m, result):
     c_days = [d for d in m.days if sum(v(m.daily_production[l, "C", d]) for l in m.lines) > 1e-5]
     a_days = [d for d in m.days if sum(v(m.daily_production[l, "A", d]) for l in m.lines) > 1e-5]
     pre = result.daily_material.query("product == 'A' and horizon_day == @start")
-    result.transition = dict(qualification_start=date(start), shutdown_days=[date(d) for d in range(start, start+3)],
+    result.transition = dict(qualification_start=date(start), shutdown_days=[date(d) for d in range(start, start+m.qualification_duration)],
         c_first_production=date(min(c_days)) if c_days else None,
         a_last_production=date(max(a_days)) if a_days else None,
         a_fp_sellthrough_later_months_msu=sum(v(m.shipment["A", h, t]) for h in m.hubs for t in m.months if t > m.day_month[start]),
@@ -126,12 +142,13 @@ def _schedule_results(m, result):
     # Conservative diagnostic only: assume all dispatch occurs at month-end.
     # This does not add warehouse constraints or invent a daily delivery schedule.
     fp = sum(v(m.initial_fp[p]) for p in m.products)
+    pallet_factors = m.inventory_pallet_factors
     peaks = []
     for d in m.days:
         rows = result.daily_material.query("horizon_day == @d")
-        before = fp*4 + sum((r.opening+r.fixed_arrival+r.additional_arrival)/(1000 if r.material == "RM" else 5000) for r in rows.itertuples())
+        before = fp*pallet_factors["FP"] + sum((r.opening+r.fixed_arrival+r.additional_arrival)*pallet_factors[r.material] for r in rows.itertuples())
         fp += sum(v(m.daily_production[l, p, d]) for l in m.lines for p in m.products)
-        after = fp*4 + sum(r.ending/(1000 if r.material == "RM" else 5000) for r in rows.itertuples())
+        after = fp*pallet_factors["FP"] + sum(r.ending*pallet_factors[r.material] for r in rows.itertuples())
         t = m.day_month[d]
         peaks.append(dict(**date(d), tracked_pallets=max(before, after),
             exceeds_booked_monthend_capacity=max(before, after) > v(m.onsite_capacity + m.external_block_pallets*m.external_blocks[t]) + 1e-5))
@@ -178,7 +195,7 @@ def format_summary(results: ModelResults) -> str:
 
 
 def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent=False):
-    """Write reviewable V2.1 tables; invoked only after checked solve/extraction."""
+    """Write decision tables only after checked solve/extraction."""
     import json
     from pathlib import Path
     if not outcome.success and not allow_incumbent:
@@ -195,10 +212,10 @@ def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent
     results.production.groupby(["product", "month"]).msu.sum().to_csv(directory / "production_by_product_month.csv")
     (directory / "summary.txt").write_text(
         ("OPTIMAL ALL LEXICOGRAPHIC STAGES\n" if outcome.success else "INCUMBENT ONLY: NOT PROVEN LEXICOGRAPHIC OPTIMAL\n") +
-        ("V4 integrated planning calendar.\n" if results.transition else "Historical fixed qualification scenario.\n") +
+        ("Integrated 28-day planning calendar.\n" if results.transition else "Historical fixed qualification scenario.\n") +
         "B materials smoothly replenished; physical stock unspecified.\n"
         "Month-end warehouse includes tracked FP and A/C materials only; intramonth peaks unverified.\n"
-        "PM expiry and cumulative C:D omitted. See MODEL_SCOPE.md.\n"
+        "PM expiry unverified; C:D is diagnostic, not constrained. See ASSUMPTIONS.md.\n"
         f"Minimum monetary cost: {outcome.minimum_cost}; allowed maximum: {outcome.cost_limit}\n\n"
         + format_summary(results), encoding="utf-8")
     (directory / "solve_status.json").write_text(json.dumps(
@@ -215,7 +232,7 @@ def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent
                 cost_difference_usd=results.costs["total_modeled"]-historical["costs"]["total_modeled"],
                 annual_demand_msu=float(results.service.demand_msu.sum()),
                 annual_served_msu=float(results.service.served_msu.sum()),
-                annual_service_percent=float(100*results.service.served_msu.sum()/results.service.demand_msu.sum()),
+                annual_service_percent=(float(100*results.service.served_msu.sum()/results.service.demand_msu.sum()) if results.service.demand_msu.sum()>0 else None),
                 additional_international_events=float(results.material_orders.order_event.sum()))
             (directory / "historical_comparison.json").write_text(json.dumps(comparison, indent=2), encoding="utf-8")
 

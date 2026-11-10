@@ -1,5 +1,13 @@
 # Source extraction and validation
 
+V5 active interpretation is centralized in [ASSUMPTIONS.md](ASSUMPTIONS.md).
+C:D now has two diagnostic definitions, not an imposed feasibility constraint.
+Packaging usability remains unverified without opening batch ages. The loader's
+calendar extraction was corrected from the first number in `1 Month = 4 Weeks`
+to the number after `=` (four); V4 already scheduled 28 days, so this correction
+does not change original manufacturing capacity. Monthly family priorities are
+an explicit V5 policy. Historical issues below retain source provenance.
+
 Sources are read only: `data/Venus_PS_Case_Study_2026.docx` and
 `data/Venus_PS_Supporting_Data_2026.xlsx`. Units are MSU (1,000 statistical
 units), kg, EA, pallets, USD, days and months. Opening stocks are dated

@@ -26,7 +26,7 @@ def _procurement_warm_start(model, seconds=20):
                  "l2_configuration", "l2_initial", "changeover"):
         for var in candidate.find_component(name).values():
             level = pyo.value(var)
-            var.fix(round(level) if var.is_integer() else max(0, level))
+            var.fix(round(level) if var.is_integer() else max(0, level), skip_validation=True)
     candidate.objective.set_value(candidate.additional_order_events)
     solver = pyo.SolverFactory("appsi_highs")
     solver.options["time_limit"] = seconds
@@ -44,7 +44,7 @@ def _procurement_warm_start(model, seconds=20):
     return float(pyo.value(candidate.additional_order_events))
 
 
-def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, time_limit=120, progress=False) -> SolveOutcome:
+def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, time_limit=120, progress=False, stage_callback=None) -> SolveOutcome:
     """Advance only after proven optimality; label any fallback/incumbent report.
 
     Service optima are fixed by equality (subject to solver feasibility tolerance).
@@ -55,7 +55,9 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
     if not isfinite(cost_tolerance) or cost_tolerance < 0:
         raise ValueError("Cost tolerance must be a finite nonnegative fraction")
     if cost_tolerance != 0:
-        raise ValueError("V4 supports strict Scenario A only: cost tolerance must be zero")
+        raise ValueError("Strict Scenario A only: cost tolerance must be zero")
+    if time_limit is not None and (not isfinite(time_limit) or time_limit <= 0):
+        raise ValueError("Time limit must be positive and finite")
     if model.component("service_locks") is not None:
         model.del_component("service_locks")
     model.service_locks = pyo.ConstraintList()
@@ -76,6 +78,8 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
         # Cleanup only within tied event/quantity optima; all earlier locks stay.
         expressions.append(("cost_cleanup", model.total_cost))
         for name, expression in expressions:
+            if stage_callback:
+                stage_callback(name, "running", {})
             if progress:
                 print(f"Solving {name} (per-stage limit {time_limit}s)", flush=True)
             model.objective.set_value(expression)
@@ -107,6 +111,8 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
                 if "lower_bound" in stage and "upper_bound" in stage:
                     stage["relative_gap"] = abs(stage["upper_bound"] - stage["lower_bound"]) / max(1e-10, abs(stage["upper_bound"]))
             stages.append(stage)
+            if stage_callback:
+                stage_callback(name, "completed" if termination == TerminationCondition.optimal and status == SolverStatus.ok else "stopped", stage.copy())
             if status != SolverStatus.ok or termination != TerminationCondition.optimal:
                 if hasattr(result, "solution") and len(result.solution):
                     model.solutions.load_from(result)
@@ -119,7 +125,7 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
                     stage["incumbent_source"] = "previous proven stage (fallback)"
                 if model._has_incumbent and "lower_bound" in stage:
                     stage["incumbent_gap"] = abs(stage["incumbent_objective"]-stage["lower_bound"]) / max(1e-10, abs(stage["incumbent_objective"]))
-                return SolveOutcome(False, f"{name}: {status}, {termination}; no reportable optimal solution.", stages, minimum_cost, cost_limit)
+                return SolveOutcome(False, f"{name}: {status}, {termination}; later stages not run; any exported incumbent is not fully lexicographic optimal.", stages, minimum_cost, cost_limit)
             model.solutions.load_from(result)
             model._has_incumbent = True
             optimum = float(pyo.value(expression))
@@ -142,18 +148,24 @@ def main():
     from src.data_loader import load_case, validate_case
     from src.model import build_model
     from src.results import extract_results, format_summary, write_results
-    parser = argparse.ArgumentParser(description="V4 strict Scenario A only")
-    parser.add_argument("--output-dir", type=Path, default=Path("reports/v4"))
+    parser = argparse.ArgumentParser(description="V6 strict Scenario A only")
+    parser.add_argument("--output-dir", type=Path, default=Path("reports/v6"))
     parser.add_argument("--time-limit", type=float, default=120, help="Seconds per stage; nonoptimal stages are reported honestly")
     parser.add_argument("--tee", action="store_true")
     args = parser.parse_args()
+    from src.data_loader import ROOT
+    for name in ("v2", "v2_1", "v4", "v5"):
+        historical = (ROOT / "reports" / name).resolve()
+        target = args.output_dir.resolve()
+        if target == historical or historical in target.parents:
+            parser.error("Use a new output directory; historical V2/V2.1/V4 reports are preserved")
     data = load_case()
     errors, _ = validate_case(data)
     if errors:
         print("Input validation failed: " + str(errors))
         return 1
     model = build_model(data)
-    print("V4 Scenario A only: 12 months x 28 planning days", flush=True)
+    print("V6 Scenario A only: 12 months x 28 planning days; exact monthly family priorities", flush=True)
     outcome = solve_lexicographic(model, time_limit=args.time_limit, progress=True, tee=args.tee)
     print(outcome.message)
     for stage in outcome.stages:
@@ -170,13 +182,17 @@ def main():
         results = extract_results(model, allow_incumbent=not outcome.success)
         print(format_summary(results))
         write_results(results, outcome, args.output_dir, allow_incumbent=not outcome.success)
+        # A feasible monetary optimum remains publishable if a secondary stage times out.
+        if outcome.minimum_cost is not None:
+            from src.reporting import generate_reports
+            generate_reports(data, args.output_dir)
     else:
         import json
         args.output_dir.mkdir(parents=True, exist_ok=True)
         (args.output_dir / "solve_status.json").write_text(json.dumps(outcome.__dict__, indent=2))
-    print("B physical material space unspecified/excluded; PM expiry and cumulative C:D omitted.")
+    print("B physical material space unspecified/excluded; PM expiry unverified; both C:D diagnostics reported.")
     print("Month-end warehouse checks do not verify intramonth peaks. See MODEL_SCOPE.md.")
-    return 0 if outcome.success else 1
+    return 0 if outcome.success or (outcome.minimum_cost is not None and model._has_incumbent and audit["passed"]) else 1
 
 
 

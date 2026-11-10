@@ -1,0 +1,14 @@
+{
+  "model_version": "V5 strict Scenario A",
+  "baseline_report": "reports\\v5\\solve_status.json",
+  "baseline_sha256": "0360a52299ace32d373c893245aa88f85c89deaa76ba7796735f31b8b600526c",
+  "source_sha256": {
+    "src/model.py": "fabe52a73512ac1f0c334b466e3281f99732b08189b472bc223c275ef992519a",
+    "src/scheduling.py": "f694a43de289d84c9a0205d4f80a0ce455d37b594d6d6c8c553a356783188b39",
+    "src/priorities.py": "5c6e053bc9ba3b8debac3eb4a4adc911668586d385c4c8aa5272b2abd35807c1",
+    "src/parameters.py": "3d512a2de1e6f78039e90defe58264af8dac35d0ee476352fed1851870fee5f2",
+    "src/data_loader.py": "f87975b8570cd7a7f508d2fa869981ef7c66100ccd82757a9c991c0980b23c28",
+    "src/solve.py": "e97fb3642e8fd4fd9b7be384d2850fdd234798a130c60d6288e3871ff97adf02"
+  },
+  "note": "V5 mathematical formulation preserved; original full constraint/variable signatures match the adapter, separate CLI parity and four real acceptance solves verified. Added source-derived reporting-only pallet conversion metadata; no constraint or objective changes."
+}

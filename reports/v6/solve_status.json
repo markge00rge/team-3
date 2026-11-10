@@ -1,0 +1,71 @@
+{
+  "success": false,
+  "message": "international_order_events: aborted, maxTimeLimit; later stages not run; any exported incumbent is not fully lexicographic optimal.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 10941467.499999994,
+      "upper_bound": 10941467.499999994,
+      "relative_gap": 0.0,
+      "optimum": 10941467.499999994
+    },
+    {
+      "name": "international_order_events",
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "lower_bound": 3.0,
+      "upper_bound": 4.0,
+      "relative_gap": 0.25,
+      "incumbent_objective": 4.0,
+      "incumbent_gap": 0.25
+    }
+  ],
+  "minimum_cost": 10941467.499999994,
+  "cost_limit": 10941467.499999994,
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 56167.500000003914,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30299.99999999999,
+    "external_storage": 0.0,
+    "total_modeled": 10941467.500000011,
+    "operating_full_ide": 1215467.500000004,
+    "ide_overlap_adjustment": 0.0,
+    "operating_expenses": 1215467.500000004,
+    "a_materials": 0.0,
+    "c_materials": 3949999.999999972,
+    "b_materials": 5776000.000000034,
+    "total_delivery_cost": 10941467.500000011,
+    "dismissal": 0.0
+  }
+}

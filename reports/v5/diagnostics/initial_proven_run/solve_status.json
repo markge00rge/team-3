@@ -1,0 +1,80 @@
+{
+  "success": true,
+  "message": "All service, cost, order-event and quantity stages solved to optimality.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 1215467.5,
+      "upper_bound": 1215467.5,
+      "relative_gap": 0.0,
+      "optimum": 1215467.5
+    },
+    {
+      "name": "international_order_events",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 4.0,
+      "upper_bound": 4.0,
+      "relative_gap": 0.0,
+      "optimum": 4.0
+    },
+    {
+      "name": "procurement_quantity_tiebreak",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 2300.0,
+      "upper_bound": 2300.0,
+      "relative_gap": 0.0,
+      "optimum": 2300.0
+    },
+    {
+      "name": "cost_cleanup",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 1215467.5000000005,
+      "upper_bound": 1215467.5000000005,
+      "relative_gap": 0.0,
+      "optimum": 1215467.5000000005
+    }
+  ],
+  "minimum_cost": 1215467.5,
+  "cost_limit": 1215467.5,
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 56167.500000000015,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30300.000000000455,
+    "external_storage": 0.0,
+    "total_modeled": 1215467.5000000005
+  }
+}

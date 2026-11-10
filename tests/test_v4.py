@@ -20,7 +20,9 @@ TOL = 1e-5
 
 @pytest.fixture(scope="module")
 def case():
-    return load_case()
+    data=load_case()
+    data.rules['legacy_v5']=True  # freeze the historical V4 regression contract
+    return data
 
 
 def diagnostic(case, start=10):

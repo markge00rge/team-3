@@ -1,0 +1,28 @@
+{
+  "protected_files_checked": 146,
+  "changed": [],
+  "engine_unchanged": true,
+  "runs": [
+    {
+      "kind": "original",
+      "run_id": "fbb1b59cb6f14c2fafc11e694531ed4c",
+      "name": "Original Venus ? Saved History Validation",
+      "directory": "reports\\app_runs\\saved_history_original_8399e5ea3c",
+      "service_msu": 3095.0,
+      "demand_msu": 3095.0,
+      "total_delivery_cost": 10941467.499999976,
+      "all_stages_optimal": true
+    },
+    {
+      "kind": "salary",
+      "run_id": "b087f5600c6f4032b522a7a679cef11d",
+      "name": "Lower Salary ? Saved History Validation",
+      "directory": "reports\\app_runs\\saved_history_salary_7bb90d5742",
+      "service_msu": 3095.0,
+      "demand_msu": 3095.0,
+      "total_delivery_cost": 10857467.5,
+      "all_stages_optimal": true
+    }
+  ],
+  "snapshot_vs_exported_tables_exact": true
+}

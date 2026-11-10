@@ -10,7 +10,7 @@ import pandas as pd
 from src.data_loader import ROOT, load_case
 
 INPUT_TABLES = ("production", "inventory", "shipments", "service", "transport",
-                "staffing", "material_balances", "warehouse")
+                "staffing", "material_balances", "warehouse", "material_orders")
 MARKER = "=== MONTHLY FINANCIAL RECONCILIATION (generated) ==="
 COST_COLUMNS = ("base_salaries_usd", "new_crew_salaries_usd", "hiring_fees_usd",
                 "a_rm_scrap_value_usd", "a_pm_scrap_value_usd", "a_rm_disposal_usd",
@@ -54,6 +54,9 @@ def calculate(data, tables, status):
     readable Markdown; it is never used to calculate a balance or expense.
     """
     months, products, hubs = tuple(data.months), tuple(data.products), tuple(data.hubs.index)
+    from src.financial_model import material_price
+    complete='total_delivery_cost' in status['costs']
+    orders=tables.get('material_orders',pd.DataFrame())
     from itertools import product
     specs = {
         "production": (["line", "product", "month"], product(data.lines.index, products, months)),
@@ -122,8 +125,8 @@ def calculate(data, tables, status):
         row = dict(month=t, base_salaries_usd=data.lines.operators.sum() * wage,
             new_crew_salaries_usd=staff.employed_crews.sum() * crew * wage,
             hiring_fees_usd=staff.hired_crew.sum() * crew * data.rules["hiring_usd_per_operator"],
-            a_rm_scrap_value_usd=rm * data.rules["rm_usd_per_kg"],
-            a_pm_scrap_value_usd=pm * data.rules["pm_usd_per_ea"],
+            a_rm_scrap_value_usd=rm * material_price(data,'A','RM'),
+            a_pm_scrap_value_usd=pm * material_price(data,'A','PM'),
             a_rm_disposal_usd=rm / 1000 * data.rules["disposal_usd_per_ton"],
             a_pm_disposal_usd=pm * (data.rules["pm_kg_per_1000_ea"] / 1000) / 1000 * data.rules["disposal_usd_per_ton"],
             fp_holding_usd=math.fsum(detail.query("month == @t").holding_expense_usd),
@@ -132,6 +135,30 @@ def calculate(data, tables, status):
             service_penalties_usd=sum(service[h] * data.hubs.loc[h, "unserved_usd_per_msu"] for h in hubs),
             external_storage_usd=tables["warehouse"].query("month == @t").external_blocks.item() * data.rules["overflow_block_pallets"] * data.rules["overflow_usd_per_pallet_month"])
         row["total_modeled_cost_usd"] = math.fsum(row[c] for c in COST_COLUMNS)
+        if complete:
+            row['dismissal_expense_usd']=staff.dismissed_crew.sum()*crew*data.rules.get('dismissal_usd_per_operator',0)
+            row['full_ide_usd']=sum(row[c] for c in COST_COLUMNS[3:7])
+            row['operating_full_ide_usd']=row['total_modeled_cost_usd']+row['dismissal_expense_usd']
+            overlap=0.0
+            for k in ('RM','PM'):
+                annual_scrap=tables['material_balances'].query("product == 'A' and material == @k").scrap.sum()
+                annual_orders=orders.query("product == 'A' and material == @k").quantity.sum()
+                expected=min(annual_scrap,annual_orders) if scrap[k]>1e-7 else 0.0
+                actual=tables['material_balances'].query("product == 'A' and material == @k and month == @t").new_purchased_scrap.item()
+                _close(actual,expected,'New purchased A scrap provenance',1e-4)
+                overlap+=actual*material_price(data,'A',k)
+            row['ide_overlap_adjustment_usd']=overlap
+            row['operating_expenses_usd']=row['operating_full_ide_usd']-overlap
+            for p in ('A','C'):
+                for k in ('RM','PM'):
+                    amount=orders.query('product == @p and material == @k and order_month == @t').quantity.sum()
+                    row[f'{p.lower()}_{k.lower()}_order_usd']=amount*material_price(data,p,k)
+                row[f'{p.lower()}_material_cost_usd']=row[f'{p.lower()}_rm_order_usd']+row[f'{p.lower()}_pm_order_usd']
+            for k,col in [('RM','rm_kg_per_msu'),('PM','pm_ea_per_msu')]:
+                row[f'b_{k.lower()}_consumption_usd']=made['B',t]*data.bom.loc['B',col]*material_price(data,'B',k)
+            row['b_material_cost_usd']=row['b_rm_consumption_usd']+row['b_pm_consumption_usd']
+            row['total_delivery_cost_usd']=row['operating_expenses_usd']+sum(row[f'{p}_material_cost_usd'] for p in ('a','c','b'))
+            row['total_modeled_cost_usd']=row['total_delivery_cost_usd']
         cash.append(row)
     costs = pd.DataFrame(cash)
     annual = {"month": "ANNUAL"}
@@ -145,9 +172,15 @@ def calculate(data, tables, status):
         transportation=totals["dedicated_transport_usd"]+totals["spot_transport_usd"],
         ide=sum(totals[c] for c in COST_COLUMNS[3:7]), service_failure=totals["service_penalties_usd"],
         external_storage=totals["external_storage_usd"], total_modeled=totals["total_modeled_cost_usd"])
+    if complete:
+        groups['labor']+=totals['dismissal_expense_usd']
+        groups.update(operating_full_ide=totals['operating_full_ide_usd'],ide_overlap_adjustment=totals['ide_overlap_adjustment_usd'],
+            operating_expenses=totals['operating_expenses_usd'],a_materials=totals['a_material_cost_usd'],
+            c_materials=totals['c_material_cost_usd'],b_materials=totals['b_material_cost_usd'],
+            total_delivery_cost=totals['total_delivery_cost_usd'],dismissal=totals['dismissal_expense_usd'])
     for name, value in groups.items():
         _close(value, status["costs"][name], f"reported {name}", .01)
-    monetary_stage = next(s for s in status["stages"] if s["name"] == "modeled_cost")
+    monetary_stage = next((s for s in status["stages"] if s["name"] == "modeled_cost"), {"termination": "notRun"})
     if monetary_stage["termination"] == "optimal":
         _close(groups["total_modeled"], monetary_stage["optimum"], "proven minimum monetary cost", .01)
     opening_value = math.fsum(r.opening_fp_msu * r.valuation_usd_per_msu for r in detail.itertuples())

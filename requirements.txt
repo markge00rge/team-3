@@ -3,3 +3,5 @@ highspy
 pandas
 openpyxl
 pytest
+streamlit==1.65.0
+plotly==6.9.0

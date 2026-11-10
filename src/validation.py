@@ -50,6 +50,10 @@ def audit_exported_schedule(data, directory):
     import pandas as pd
     from src.model import build_model
     directory = Path(directory)
+    from copy import deepcopy
+    data=deepcopy(data)
+    status=json.loads((directory/'solve_status.json').read_text())
+    data.rules['legacy_v5']='total_delivery_cost' not in status.get('costs',{})
     m = build_model(data)
     def read(name):
         return pd.read_csv(directory / f"{name}.csv")
@@ -73,12 +77,16 @@ def audit_exported_schedule(data, directory):
     for r in read("staffing").itertuples():
         assign(m.hire[r.line, r.month], r.hired_crew)
         assign(m.upgraded[r.line, r.month], r.upgraded)
+        if hasattr(m,'dismiss'):
+            assign(m.dismiss[r.line,r.month],r.dismissed_crew)
+            assign(m.employed[r.line,r.month],r.employed_crews)
     for r in read("daily_material").itertuples():
         assign(m.daily_material_inventory[r.product, r.material, r.horizon_day], r.ending)
         if r.product == "A":
             assign(m.a_scrap[r.material, r.horizon_day], r.scrap)
     for r in read("material_balances").itertuples():
         assign(m.material_inventory[r.product, r.material, r.month], r.ending)
+        if hasattr(m,'a_new_scrap_month') and r.product=='A': assign(m.a_new_scrap_month[r.material,r.month],r.new_purchased_scrap)
     for r in read("material_orders").itertuples():
         key = r.product, r.material, r.order_month
         assign(m.material_order[key], r.quantity)
@@ -97,6 +105,16 @@ def audit_exported_schedule(data, directory):
         assign(m.spot[r.hub, r.month], r.spot_trucks)
     for r in read("warehouse").itertuples():
         assign(m.external_blocks[r.month], r.external_blocks)
+    if hasattr(m,'a_new_scrap'):
+        for k in m.materials:
+            scrap=sum(pyo.value(m.a_scrap[k,d]) for d in m.days)
+            orders=sum(pyo.value(m.material_order['A',k,t]) for t in m.months)
+            assign(m.a_new_scrap[k],min(scrap,orders))
+            assign(m.a_overlap_branch[k],int(scrap>orders))
+    if hasattr(m, "priority_release"):
+        for a, b, f, t in m.priority_release:
+            shipped = sum(pyo.value(m.shipment[p, b, t]) for p in m.family_members[f])
+            assign(m.priority_release[a, b, f, t], int(shipped > 1e-8))
     status = json.loads((directory / "solve_status.json").read_text())
     m.exported_objective_locks = pyo.ConstraintList()
     if status["cost_limit"] is not None:
@@ -105,6 +123,10 @@ def audit_exported_schedule(data, directory):
         if stage["name"].startswith("service_") and stage["termination"] == "optimal":
             hub = stage["name"].split("service_", 1)[1]
             m.exported_objective_locks.add(m.shortage_by_hub[hub] == stage["optimum"])
+        if stage["termination"] == "optimal" and stage["name"] == "international_order_events":
+            m.exported_objective_locks.add(m.additional_order_events == stage["optimum"])
+        if stage["termination"] == "optimal" and stage["name"] == "procurement_quantity_tiebreak":
+            m.exported_objective_locks.add(m.procurement_tiebreak == stage["optimum"])
     result = audit_solution(m)
     result["reported_monetary_cost"] = pyo.value(m.total_cost)
     result["reported_international_events"] = pyo.value(m.additional_order_events)

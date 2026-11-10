@@ -1,4 +1,4 @@
-"""Integrated V4 model; explicit FixedScenario retains historical regression support."""
+"""Integrated V5 model; explicit FixedScenario retains historical regression support."""
 from dataclasses import dataclass
 from math import ceil
 
@@ -16,12 +16,15 @@ class FixedScenario:
 
 
 def build_model(data: CaseData, scenario: FixedScenario | None = None):
-    """Default: daily integrated V4. Explicit scenario: historical monthly adapter."""
+    """Default: daily integrated V5. Explicit scenario: historical monthly adapter."""
     integrated = scenario is None
+    if integrated:
+        from src.parameters import validate_parameters
+        validate_parameters(data)
     scenario = scenario or FixedScenario(data.rules["target_launch"])
     if not integrated and scenario.transition_month not in data.months:
         raise ValueError("Transition month must be in the planning horizon")
-    m = pyo.ConcreteModel(name="Venus V4 integrated 28-day supply chain" if integrated else "Venus historical fixed monthly scenario")
+    m = pyo.ConcreteModel(name="Venus V5 integrated 28-day supply chain" if integrated else "Venus historical fixed monthly scenario")
     m.scenario = None if integrated else scenario
     m._solve_success = False
     m.months = pyo.Set(initialize=data.months, ordered=True)
@@ -40,7 +43,7 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
         for month in m.months:
             days = float(data.lines.loc[line, "days_per_month"])
             if integrated:
-                days += data.rules["upgrade_extra_days"]
+                days = 4 * int(data.rules["upgraded_profiles"][line].split("/")[1])
             elif line == "L2" and scenario.reserve_l2_changeover:
                 days -= data.rules["changeover_days"]
             if not integrated and month == scenario.transition_month:
@@ -59,6 +62,15 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     m.unserved = pyo.Var(m.hubs, m.families, m.months, domain=pyo.NonNegativeReals)
     m.dedicated = pyo.Var(m.hubs, m.months, domain=pyo.NonNegativeIntegers)
     m.spot = pyo.Var(m.hubs, m.months, domain=pyo.NonNegativeIntegers)
+    # Redundant, tight source-demand bounds improve presolve without restricting
+    # any solution allowed by nonnegative family demand conservation.
+    for h in m.hubs:
+        for f in m.families:
+            for t in m.months:
+                limit = float(pyo.value(m.demand[h, f, t]))
+                m.unserved[h, f, t].setub(limit)
+                for p in m.family_members[f]:
+                    m.shipment[p, h, t].setub(limit)
     for line in m.lines:
         for product in m.products:
             for month in m.months:
@@ -122,6 +134,8 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     m.max_order_lots = pyo.Param(m.material_products, m.materials, m.months, initialize=lot_bounds)
     m.integer_lots = pyo.Var(m.material_products, m.materials, m.months,
                             domain=pyo.NonNegativeIntegers, bounds=lambda m, p, k, t: (0, m.max_order_lots[p, k, t]))
+    for p, k, t in m.material_order:
+        m.material_order[p, k, t].setub(moq[k] * lot_bounds[p, k, t])
     m.order_event = pyo.Var(m.material_products, m.materials, m.months, domain=pyo.Binary)
     m.order_lot_link = pyo.Constraint(m.material_products, m.materials, m.months,
         rule=lambda m, p, k, t: m.material_order[p, k, t] == m.lot_size[k] * m.integer_lots[p, k, t])
@@ -183,6 +197,10 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     m.external_storage_cost = pyo.Expression(expr=sum(m.external_blocks[t] * m.external_block_pallets *
         data.rules["overflow_usd_per_pallet_month"] for t in m.months))
     m.external_block_usd = pyo.Param(initialize=data.rules["overflow_block_pallets"] * data.rules["overflow_usd_per_pallet_month"])
+    # Reporting metadata only: source conversions also drive the warehouse
+    # expressions above. Keep conservative peak diagnostics in the same units.
+    m.inventory_pallet_factors = dict(FP=data.rules["fp_pallets_per_msu"],
+        RM=1 / data.rules["rm_kg_per_pallet"], PM=1 / data.rules["pm_ea_per_pallet"])
     # IDE is omitted. B physical material footprint is unspecified/excluded.
     # No material purchasing term is included.
     m.total_cost = pyo.Expression(expr=m.labor_cost + m.holding_cost + m.transport_cost + m.service_penalty + m.external_storage_cost)
@@ -190,4 +208,9 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     if integrated:
         from src.scheduling import add_integrated_schedule
         add_integrated_schedule(m, data)
+        from src.priorities import add_monthly_priorities
+        add_monthly_priorities(m)
+        if not data.rules.get('legacy_v5',False):
+            from src.financial_model import add_material_financials
+            add_material_financials(m,data)
     return m
