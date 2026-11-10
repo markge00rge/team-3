@@ -14,8 +14,8 @@ from src.data_loader import ROOT
 
 SCHEMA_VERSION = 1
 CATEGORIES = ('Venus Case Study', 'General Plant')
-FINANCIAL_VERSION = 'venus-v6-reconciled-materials-1'
-MODEL_VERSION = 'Venus V6 / strict Scenario A'
+FINANCIAL_VERSION = 'venus-v7-abc-additional-purchases-1'
+MODEL_VERSION = 'Venus V7 / explicit ABC procurement / strict Scenario A'
 
 
 class RunStoreError(ValueError):
@@ -62,11 +62,12 @@ def make_record(name,scenario,effective,completion,tables,transition,audit,*,
                 category='Venus Case Study',scenario_type='Customized',run_id=None,
                 created_at=None,source_run_id=None,assumptions=None):
     costs=completion.get('costs',{})
-    financial=FINANCIAL_VERSION if 'total_delivery_cost' in costs else 'historical-operating-only'
+    explicit=completion.get('material_policy')=='explicit_abc_v7'
+    financial=(FINANCIAL_VERSION if explicit else 'venus-v6-reconciled-materials-1') if 'total_delivery_cost' in costs else 'historical-operating-only'
     record=clean(dict(schema_version=SCHEMA_VERSION,run_id=run_id or uuid4().hex,
         name=validate_name(name),category=category,scenario_type=scenario_type,
         created_at=created_at or datetime.now(timezone.utc).isoformat(),
-        model_version=MODEL_VERSION if financial==FINANCIAL_VERSION else 'Historical / unspecified',
+        model_version=completion.get('model_version',MODEL_VERSION if explicit else 'Venus V6 / strict Scenario A' if 'total_delivery_cost' in costs else 'Historical / unspecified'),
         financial_version=financial,engine_fingerprint=completion.get('engine_fingerprint'),
         source_run_id=source_run_id,configuration=scenario,effective_inputs=effective,
         assumptions=assumptions or {},results=dict(completion=completion,

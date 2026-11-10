@@ -109,7 +109,7 @@ def home():
         st.write("Design and optimize a supply chain with a different number of products, production lines and distribution hubs.")
         st.caption("Structural model generalization is the next development phase.")
         st.button("Explore what’s coming →",on_click=go,args=("future",),width="stretch")
-    st.caption("A case-competition planning application. Every new optimization executes the existing V6 MILP; saved baselines are identified explicitly.")
+    st.caption("A case-competition planning application. Every new optimization executes the existing V7 MILP; saved baselines are identified explicitly.")
 
 
 def venus():
@@ -121,7 +121,7 @@ def venus():
     a,b=st.columns(2,gap="large")
     with a,st.container(border=True):
         st.subheader("Run the original case")
-        st.write("Load the original P&G data and accepted V6 assumptions. No questionnaire required.")
+        st.write("Load the original P&G data and accepted V7 assumptions. No questionnaire required.")
         st.button("Run Original Case",type="primary",on_click=go,args=('name_original',),width="stretch")
         st.caption("Starts a new real solve. Your custom draft is preserved.")
     with b,st.container(border=True):
@@ -138,7 +138,7 @@ def venus():
 
 
 def name_original():
-    heading('VENUS / ORIGINAL CASE','Name your optimization run','Original business inputs remain unchanged. Your custom draft is preserved.')
+    heading('VENUS / ORIGINAL CASE','Name your optimization run','Uses original source values plus the adopted V7 B opening stocks: 200,000 kg RM and 750,000 EA PM. Your custom draft is preserved.')
     from app.components.fields import run_name_input
     run_name_input('original_run_name')
     name=st.session_state.get('original_run_name','')
@@ -202,10 +202,11 @@ def running():
 def main():
     initialize(st.session_state)
     if "source" not in st.session_state: st.session_state.source=source_data()
-    if "original" not in st.session_state or st.session_state.original.schema_version!=2:
+    if "original" not in st.session_state or st.session_state.original.schema_version!=3:
         st.session_state.original=original_scenario(st.session_state.source)
     apply(); sidebar()
     if "notice" in st.session_state: st.error(st.session_state.notice)
+    if "migration_notice" in st.session_state: st.info(st.session_state.migration_notice)
     screen=st.session_state.screen
     if screen=="home": home()
     elif screen=="venus": venus()

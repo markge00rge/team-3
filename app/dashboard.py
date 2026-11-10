@@ -70,6 +70,7 @@ def render(directory=None, *, record=None):
             st.session_state.screen='saved_parameters'
         right.button('View Configured Parameters',icon=':material/settings:',on_click=inspect,width='stretch')
     heading("VENUS / SOLVED SCENARIO",record['name'] if record else completion["name"],"Actual MILP output · strict Scenario A · 28-day planning months")
+    explicit=completion.get('material_policy')=='explicit_abc_v7'
     if not completion["has_solution"]:
         st.error(completion["outcome"]["message"])
         table(pd.DataFrame(completion["outcome"]["stages"])); return
@@ -89,7 +90,7 @@ def render(directory=None, *, record=None):
         st.info('Some newer report fields were not saved with this historical run. Available original tables are shown without recalculation.')
         if 'total_delivery_cost' in completion['costs']:
             from app.components.financial_cards import render as financial_cards
-            financial_cards(completion['costs'])
+            financial_cards(completion['costs'],explicit_b=explicit)
         for name,frame in t.items():
             with st.expander(name.replace('_',' ').title()): table(frame)
         return
@@ -97,7 +98,7 @@ def render(directory=None, *, record=None):
     complete='total_delivery_cost' in completion['costs']
     if complete:
         from app.components.financial_cards import render as financial_cards
-        financial_cards(completion['costs'])
+        financial_cards(completion['costs'],explicit_b=explicit)
     else: st.info('Historical operating-cost-only model: additional A/C purchasing and B consumption were excluded. These are not comparable total delivery costs.')
     cards=[("Minimum modeled annual cost" if completion["monetary_optimal"] else "Feasible plan cost",f"${k['cost']:,.2f}"),
         ("Annual customer service",f"{k['service']:.2%}" if k["service"] is not None else "No demand"),
@@ -128,7 +129,8 @@ def render(directory=None, *, record=None):
         table(monthly)
         st.caption("Inventory drawdowns are negative changes, not negative ending stock. Inventory snapshots are not summed as annual stock.")
         with st.expander("Accepted model assumptions"):
-            st.write("Packaging usability is unverified; no age tracking. B materials are smoothly replenished and their physical stocks/space are unspecified. Month-end warehouse occupancy is checked; intramonth peaks are not established. A finished goods may sell through after qualification. No overtime or unknown headcount limit is invented.")
+            st.write(('B RM/PM and their warehouse space are explicitly tracked; B opening quantities are adopted clarification assumptions. ' if explicit else 'Historical B materials are smoothly replenished and their physical stocks/space are unspecified. ')+
+                'Packaging usability is unverified; no age tracking. Month-end warehouse occupancy is checked; intramonth peaks are not established. A finished goods may sell through after qualification. No overtime or unknown headcount limit is invented.')
     with tabs[1]:
         prod=t["production"].groupby(["month","product"],as_index=False).msu.sum()
         chart(prod,"month","msu","product",title="Monthly product production · MSU")
@@ -159,7 +161,7 @@ def render(directory=None, *, record=None):
         table(balances)
         st.subheader("Product A transition scrap and IDE")
         table(pd.DataFrame([dict(item=key,value=value) for key,value in transition.items() if any(word in key for word in ("scrap","disposal","ide","consumed_before"))]))
-        st.caption("B material consumption is informational; no B material inventory/procurement decisions.")
+        st.caption('B material consumption is informational, not an additional expense. B procurement/inventories are in the tables above.' if explicit else 'Historical smooth-replenishment B consumption expense; no B stock/procurement decisions in this saved version.')
         table(t["b_material_consumption"])
     with tabs[3]:
         a,b=st.columns(2)
@@ -167,7 +169,7 @@ def render(directory=None, *, record=None):
         with b: chart(t["cash"],"month","ending_fp_value_usd",kind="line",title="Cash tied up in FP · USD balance")
         chart(t["warehouse"],"month",["fp_pallets","rm_pallets","pm_pallets"],title="Tracked warehouse requirements · pallets")
         table(t["warehouse"]); table(t["cash"])
-        st.caption("Cash is a balance-sheet measure, not another expense. B material space is excluded because physical inventory is unspecified. Intramonth peaks remain unverified.")
+        st.caption('Cash is a balance-sheet measure, not another expense. '+('All ABC material space is tracked.' if explicit else 'Historical B material space is excluded because physical inventory is unspecified.')+' Intramonth peaks remain unverified.')
     with tabs[4]:
         family=t["service"].copy(); family["route"]=family.hub+" / "+family.family
         chart(family,"month","served_msu","route",title="Shipments by hub and family · MSU")
@@ -183,7 +185,7 @@ def render(directory=None, *, record=None):
         chart(financial.query("month != 'ANNUAL'"),"month","total_modeled_cost_usd",title="Monthly modeled expenses · USD")
         table(financial)
         st.caption("Cost: modeled expenses above. Cash: inventory values in Warehouse & Cash. Service: delivered demand in Distribution. Productivity: capacity utilization and MSU per employed operator in Manufacturing.")
-        st.info("A/C new materials are charged when ordered; B materials follow production. Full IDE and the exact newly purchased A write-off overlap are disclosed. Inventory asset value is not another expense.")
+        st.info(('A/B/C new materials are charged when ordered. No separate B consumption expense.' if explicit else 'Historical A/C new materials are charged when ordered; B materials follow production.')+' Full IDE and the exact newly purchased A write-off overlap are disclosed. Inventory asset value is not another expense.')
     with tabs[6]:
         st.subheader("Cumulative C:D diagnostics",help="C:D compares cumulative capacity or available supply with cumulative customer demand. Both definitions are reported; neither adds a new feasibility constraint.")
         indicators=t["cumulative_indicators"]

@@ -1,0 +1,207 @@
+{
+  "name": "V7 Final Original Venus",
+  "engine_fingerprint": "2b66235b34816289a5a92d9e22ab8daa514c4b5a32f0fb3098a6e94e8cbc8d42",
+  "outcome": {
+    "success": false,
+    "message": "international_order_events: aborted, maxTimeLimit; later stages not run; any exported incumbent is not fully lexicographic optimal.",
+    "stages": [
+      {
+        "name": "service_H1",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "service_H2",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "service_H3",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "modeled_cost",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 9865467.5,
+        "upper_bound": 9865467.5,
+        "relative_gap": 0.0,
+        "optimum": 9865467.5
+      },
+      {
+        "name": "international_order_events",
+        "status": "aborted",
+        "termination": "maxTimeLimit",
+        "lower_bound": 8.0,
+        "upper_bound": 10.0,
+        "relative_gap": 0.2,
+        "incumbent_objective": 10.0,
+        "incumbent_gap": 0.2
+      }
+    ],
+    "minimum_cost": 9865467.5,
+    "cost_limit": 9865467.5
+  },
+  "has_solution": true,
+  "monetary_optimal": true,
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 56167.5,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30300.00000000013,
+    "external_storage": 0.0,
+    "total_modeled": 9865467.5,
+    "operating_full_ide": 1215467.5000000002,
+    "ide_overlap_adjustment": 0.0,
+    "operating_expenses": 1215467.5000000002,
+    "a_materials": 0.0,
+    "c_materials": 3950000.0,
+    "b_materials": 4700000.0,
+    "total_delivery_cost": 9865467.5,
+    "dismissal": 0.0
+  },
+  "reconciliation": {
+    "annual_costs": {
+      "labor": 840000.0,
+      "fp_holding": 56167.49999999999,
+      "transportation": 289000.0,
+      "ide": 30300.00000000013,
+      "service_failure": 0.0,
+      "external_storage": 0.0,
+      "total_modeled": 9865467.5,
+      "operating_full_ide": 1215467.5000000002,
+      "ide_overlap_adjustment": 0.0,
+      "operating_expenses": 1215467.5000000002,
+      "a_materials": 0.0,
+      "c_materials": 3950000.0,
+      "b_materials": 4700000.0,
+      "total_delivery_cost": 9865467.5,
+      "dismissal": 0.0
+    },
+    "holding_by_product": {
+      "A": -4.263256414560601e-13,
+      "B": 7342.499999999997,
+      "C": 48824.99999999999
+    },
+    "opening_basis_holding_usd": 58004.999999999985,
+    "ending_basis_holding_usd": 56167.49999999999,
+    "annual_ending_only_holding_usd": 8.952838470577262e-12,
+    "all_fp_at_c_value_holding_usd": 54431.99999999999,
+    "ac_stock_at_a_value_holding_usd": 53842.49999999999,
+    "rounded_integer_msu_holding_usd": 56167.5,
+    "residual_vs_reported_usd": 0.0,
+    "residual_vs_proven_minimum_usd": 0.0,
+    "monthly_ending_inventory_sum_msu": 863.9999999999999
+  },
+  "baseline": {
+    "label": "Saved validated V5 baseline \u2014 not a new solve",
+    "costs": {
+      "labor": 840000.0,
+      "fp_holding": 56167.500000002095,
+      "transportation": 289000.0,
+      "service_failure": 0.0,
+      "ide": 30299.99999999899,
+      "external_storage": -0.0,
+      "total_modeled": 1215467.5000000012
+    },
+    "stages": [
+      {
+        "name": "service_H1",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "service_H2",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "service_H3",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "relative_gap": 0.0,
+        "optimum": 0.0
+      },
+      {
+        "name": "modeled_cost",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 1215467.499999998,
+        "upper_bound": 1215467.499999998,
+        "relative_gap": 0.0,
+        "optimum": 1215467.499999998
+      },
+      {
+        "name": "international_order_events",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 4.0,
+        "upper_bound": 4.0,
+        "relative_gap": 0.0,
+        "optimum": 4.0
+      },
+      {
+        "name": "procurement_quantity_tiebreak",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 2300.0,
+        "upper_bound": 2300.0,
+        "relative_gap": 0.0,
+        "optimum": 2300.0
+      },
+      {
+        "name": "cost_cleanup",
+        "status": "ok",
+        "termination": "optimal",
+        "lower_bound": 1215467.5000000012,
+        "upper_bound": 1215467.5000000012,
+        "relative_gap": 0.0,
+        "optimum": 1215467.5000000012
+      }
+    ],
+    "path": "reports\\v5\\solve_status.json",
+    "corresponding_engine_version": false,
+    "provenance": {
+      "model_version": "V5 strict Scenario A",
+      "baseline_report": "reports\\v5\\solve_status.json",
+      "baseline_sha256": "0360a52299ace32d373c893245aa88f85c89deaa76ba7796735f31b8b600526c",
+      "source_sha256": {
+        "src/model.py": "fabe52a73512ac1f0c334b466e3281f99732b08189b472bc223c275ef992519a",
+        "src/scheduling.py": "f694a43de289d84c9a0205d4f80a0ce455d37b594d6d6c8c553a356783188b39",
+        "src/priorities.py": "5c6e053bc9ba3b8debac3eb4a4adc911668586d385c4c8aa5272b2abd35807c1",
+        "src/parameters.py": "3d512a2de1e6f78039e90defe58264af8dac35d0ee476352fed1851870fee5f2",
+        "src/data_loader.py": "f87975b8570cd7a7f508d2fa869981ef7c66100ccd82757a9c991c0980b23c28",
+        "src/solve.py": "e97fb3642e8fd4fd9b7be384d2850fdd234798a130c60d6288e3871ff97adf02"
+      },
+      "note": "V5 mathematical formulation preserved; original full constraint/variable signatures match the adapter, separate CLI parity and four real acceptance solves verified. Added source-derived reporting-only pallet conversion metadata; no constraint or objective changes."
+    }
+  },
+  "material_policy": "explicit_abc_v7",
+  "model_version": "Venus V7 / explicit ABC procurement / strict Scenario A",
+  "financial_version": "venus-v7-abc-additional-purchases-1",
+  "saved_run_id": "fbf7d657d22141d4b70ab346a9aeb1a0"
+}

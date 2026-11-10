@@ -89,7 +89,7 @@ def compare_values(rows,compatible=True):
 def financial_comparison(a,b):
     ca,cb=a['results']['completion']['costs'],b['results']['completion']['costs']
     labels={'operating_expenses':'Operating Expenses USD','a_materials':'Additional A materials USD',
-        'c_materials':'Additional C materials USD','b_materials':'B production-linked materials USD',
+        'c_materials':'Additional C materials USD','b_materials':'Product B materials (version-specific) USD',
         'total_delivery_cost':'Total Delivery Cost USD','ide':'Full IDE USD','ide_overlap_adjustment':'IDE overlap adjustment USD',
         'transportation':'Transportation USD','external_storage':'External warehouse USD','service_failure':'Service penalties USD'}
     rows=[(label,ca.get(k),cb.get(k)) for k,label in labels.items()]
@@ -143,6 +143,8 @@ def warnings(a,b):
     messages=[]
     if a['financial_version']!=b['financial_version']:
         messages.append('Financial definitions differ. Monetary differences and percentage changes are withheld; saved figures remain visible.')
+        if any('v7' in r['financial_version'] for r in (a,b)):
+            messages.append('V7 charges new B purchase orders and tracks B stocks/space; earlier smooth-replenishment versions charged B production consumption. This is an accounting/scope change, not an inferred cost saving.')
     if a['model_version']!=b['model_version'] or a.get('engine_fingerprint')!=b.get('engine_fingerprint'):
         messages.append('These runs used different mathematical/code versions; interpret changes with that limitation.')
     _,ta,_=unpack_results(a);_,tb,_=unpack_results(b)

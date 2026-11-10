@@ -1,4 +1,4 @@
-"""Integrated V5 model; explicit FixedScenario retains historical regression support."""
+"""Integrated V7 ABC-material model; explicit historical adapters remain available."""
 from dataclasses import dataclass
 from math import ceil
 
@@ -16,17 +16,20 @@ class FixedScenario:
 
 
 def build_model(data: CaseData, scenario: FixedScenario | None = None):
-    """Default: daily integrated V5. Explicit scenario: historical monthly adapter."""
+    """Default: daily integrated V7. Explicit scenario: historical monthly adapter."""
     integrated = scenario is None
     if integrated:
+        from src.material_policy import planning_case
+        data=planning_case(data)
         from src.parameters import validate_parameters
         validate_parameters(data)
     scenario = scenario or FixedScenario(data.rules["target_launch"])
     if not integrated and scenario.transition_month not in data.months:
         raise ValueError("Transition month must be in the planning horizon")
-    m = pyo.ConcreteModel(name="Venus V5 integrated 28-day supply chain" if integrated else "Venus historical fixed monthly scenario")
+    m = pyo.ConcreteModel(name="Venus integrated 28-day supply chain" if integrated else "Venus historical fixed monthly scenario")
     m.scenario = None if integrated else scenario
     m._solve_success = False
+    m.explicit_b_materials = integrated and data.rules.get('explicit_b_materials',False)
     m.months = pyo.Set(initialize=data.months, ordered=True)
     m.lines = pyo.Set(initialize=data.lines.index)
     m.products = pyo.Set(initialize=tuple(data.products))
@@ -94,13 +97,13 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
         opening = m.initial_fp[p] if previous[t] is None else m.inventory[p, previous[t]]
         return m.inventory[p, t] == opening + sum(m.production[l, p, t] for l in m.lines) - sum(m.shipment[p, h, t] for h in m.hubs)
     m.inventory_balance = pyo.Constraint(m.products, m.months, rule=balance)
-    # Only A/C have detailed physical stocks. B remains smoothly replenished.
-    m.material_products = pyo.Set(initialize=("A", "C"))
+    # V7 tracks ABC through the same material system; legacy adapters retain AC.
+    m.material_products = pyo.Set(initialize=("A", "B", "C") if m.explicit_b_materials else ("A", "C"))
     m.materials = pyo.Set(initialize=("RM", "PM"))
     m.bom_quantity = pyo.Param(m.products, m.materials, initialize={
         (p, k): float(data.bom.loc[p, "rm_kg_per_msu" if k == "RM" else "pm_ea_per_msu"])
         for p in m.products for k in m.materials})
-    opening_materials = data.initial_materials.set_index(["product", "material"]).quantity.to_dict()
+    opening_materials = {(r.product,r.material):r.quantity for r in data.initial_materials.itertuples() if r.product in m.material_products}
     m.initial_material = pyo.Param(m.material_products, m.materials, initialize=opening_materials,
                                    within=pyo.NonNegativeReals, mutable=True)
     fixed = {(p, k, t): 0.0 for p in m.material_products for k in m.materials for t in m.months}
@@ -159,7 +162,8 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
         rule=lambda m, p, k, t: m.material_order[p, k, placed[t]] if t in placed else 0)
     m.material_consumption = pyo.Expression(m.material_products, m.materials, m.months,
         rule=lambda m, p, k, t: m.bom_quantity[p, k] * sum(m.production[l, p, t] for l in m.lines))
-    # Information only: no B stock/procurement variables or availability constraint.
+    # Informational usage alias. V7 B availability is enforced by shared balances;
+    # historical versions use this alias for their consumption-based expense.
     m.b_material_consumption = pyo.Expression(m.materials, m.months,
         rule=lambda m, k, t: m.bom_quantity["B", k] * sum(m.production[l, "B", t] for l in m.lines))
     def material_balance(m, p, k, t):
@@ -201,8 +205,8 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     # expressions above. Keep conservative peak diagnostics in the same units.
     m.inventory_pallet_factors = dict(FP=data.rules["fp_pallets_per_msu"],
         RM=1 / data.rules["rm_kg_per_pallet"], PM=1 / data.rules["pm_ea_per_pallet"])
-    # IDE is omitted. B physical material footprint is unspecified/excluded.
-    # No material purchasing term is included.
+    # Base expression: integrated scheduling/financial modules below add IDE,
+    # crew expenses and version-appropriate material purchasing terms.
     m.total_cost = pyo.Expression(expr=m.labor_cost + m.holding_cost + m.transport_cost + m.service_penalty + m.external_storage_cost)
     m.objective = pyo.Objective(expr=0, sense=pyo.minimize)
     if integrated:

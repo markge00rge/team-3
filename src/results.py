@@ -24,6 +24,7 @@ class ModelResults:
     line_capacity: pd.DataFrame = field(default_factory=pd.DataFrame)
     transition: dict = field(default_factory=dict)
     storage_peaks: pd.DataFrame = field(default_factory=pd.DataFrame)
+    material_policy: str = 'legacy_ac_smooth_b'
 
 
 def extract_results(model, *, allow_incumbent=False) -> ModelResults:
@@ -70,6 +71,12 @@ def extract_results(model, *, allow_incumbent=False) -> ModelResults:
     )
     if getattr(m, "integrated_schedule", False):
         _schedule_results(m, result)
+    result.material_policy='explicit_abc_v7' if getattr(m,'explicit_b_materials',False) else 'legacy_ac_smooth_b'
+    for p in m.products:
+        result.warehouse[f'{p.lower()}_fp_pallets']=[value(m.inventory[p,t])*m.inventory_pallet_factors['FP'] for t in m.months]
+    for p in m.material_products:
+        for k in m.materials:
+            result.warehouse[f'{p.lower()}_{k.lower()}_pallets']=[value(m.material_inventory[p,k,t])*m.inventory_pallet_factors[k] for t in m.months]
     if getattr(m,'material_financial_model',False):
         result.costs.update(operating_full_ide=value(m.operating_cost_full_ide),
             ide_overlap_adjustment=value(m.ide_overlap),operating_expenses=value(m.reconciled_operating_cost),
@@ -79,9 +86,10 @@ def extract_results(model, *, allow_incumbent=False) -> ModelResults:
             for r in result.material_balances.itertuples()]
         result.material_orders['unit_price_usd']=[value(m.material_unit_price[r.product,r.material]) for r in result.material_orders.itertuples()]
         result.material_orders['purchase_expense_usd']=result.material_orders.quantity*result.material_orders.unit_price_usd
-        result.b_material_consumption['rm_expense_usd']=result.b_material_consumption.rm_kg*value(m.material_unit_price['B','RM'])
-        result.b_material_consumption['pm_expense_usd']=result.b_material_consumption.pm_ea*value(m.material_unit_price['B','PM'])
-        result.b_material_consumption['material_expense_usd']=result.b_material_consumption.rm_expense_usd+result.b_material_consumption.pm_expense_usd
+        if not m.explicit_b_materials:
+            result.b_material_consumption['rm_expense_usd']=result.b_material_consumption.rm_kg*value(m.material_unit_price['B','RM'])
+            result.b_material_consumption['pm_expense_usd']=result.b_material_consumption.pm_ea*value(m.material_unit_price['B','PM'])
+            result.b_material_consumption['material_expense_usd']=result.b_material_consumption.rm_expense_usd+result.b_material_consumption.pm_expense_usd
     return result
 
 
@@ -190,7 +198,7 @@ def format_summary(results: ModelResults) -> str:
                   "B theoretical consumption only (physical stock unspecified):",
                   results.b_material_consumption.to_string(index=False, float_format=lambda x: f"{x:,.3f}"),
                   "Year-end A/C materials:", results.material_balances.query("month == month.max()").to_string(index=False),
-                  "No negative A/C stock or material shortage slack is permitted. Unserved customer demand is shown above."])
+                  "No negative tracked material stock or material shortage slack is permitted. Unserved customer demand is shown above."])
     return "\n".join(lines)
 
 
@@ -213,15 +221,15 @@ def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent
     (directory / "summary.txt").write_text(
         ("OPTIMAL ALL LEXICOGRAPHIC STAGES\n" if outcome.success else "INCUMBENT ONLY: NOT PROVEN LEXICOGRAPHIC OPTIMAL\n") +
         ("Integrated 28-day planning calendar.\n" if results.transition else "Historical fixed qualification scenario.\n") +
-        "B materials smoothly replenished; physical stock unspecified.\n"
-        "Month-end warehouse includes tracked FP and A/C materials only; intramonth peaks unverified.\n"
+        ("A/B/C materials explicitly balanced and ordered; purchase expense at order placement.\nMonth-end warehouse includes ABC FP, RM and PM; intramonth peaks unverified.\n" if results.material_policy=='explicit_abc_v7' else
+         "B materials smoothly replenished; physical stock unspecified.\nMonth-end warehouse includes tracked FP and A/C materials only; intramonth peaks unverified.\n") +
         "PM expiry unverified; C:D is diagnostic, not constrained. See ASSUMPTIONS.md.\n"
         f"Minimum monetary cost: {outcome.minimum_cost}; allowed maximum: {outcome.cost_limit}\n\n"
         + format_summary(results), encoding="utf-8")
     (directory / "solve_status.json").write_text(json.dumps(
         dict(success=outcome.success, message=outcome.message, stages=outcome.stages,
              minimum_cost=outcome.minimum_cost, cost_limit=outcome.cost_limit,
-             costs=results.costs), indent=2), encoding="utf-8")
+             material_policy=results.material_policy,costs=results.costs), indent=2), encoding="utf-8")
     if results.transition:
         (directory / "transition_ide.json").write_text(json.dumps(results.transition, indent=2), encoding="utf-8")
         baseline = Path(__file__).resolve().parents[1] / "reports/v2_1/scenario_a/solve_status.json"

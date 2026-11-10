@@ -91,7 +91,9 @@ def test_all_nonrule_fields_map_and_original_is_unchanged(source):
         assert not c.rules["upgrade_permissions"][l]
     assert c.rules["qualification_allowed_months"]==["2027-02"]
     assert c.initial_fp["A"]==11
-    assert (c.initial_materials.quantity==source.initial_materials.quantity+1).all()
+    from src.material_policy import planning_case
+    expected=planning_case(source)
+    assert (c.initial_materials.quantity==expected.initial_materials.quantity+1).all()
     assert (c.arrivals.quantity==source.arrivals.quantity+1).all()
     assert (c.bom.fp_usd_per_msu==source.bom.fp_usd_per_msu+1).all()
     for p in ("A","C"):

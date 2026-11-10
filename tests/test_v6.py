@@ -5,7 +5,7 @@ import pytest
 from src.data_loader import load_case
 from src.model import build_model
 from src.workforce import add_flexible_workforce
-from app.scenarios import original_scenario
+from app.scenarios import original_scenario as current_scenario
 from app.components.financial_cards import compact_currency,card_html
 
 
@@ -58,7 +58,13 @@ def test_two_full_months_of_retraining():
 
 
 @pytest.fixture(scope='module')
-def model(): return build_model(load_case())
+def model():
+    data=load_case();data.rules['explicit_b_materials']=False
+    return build_model(data)
+
+
+def original_scenario():
+    return current_scenario(schema_version=2)
 
 
 def zero(m,name):
@@ -147,6 +153,7 @@ def test_integrated_new_a_scrap_overlap_and_order_month_reporting(tmp_path):
     from src.reconciliation import read_saved,calculate
     from src.validation import audit_solution
     data=load_case()
+    data.rules['explicit_b_materials']=False  # historical V6 accounting contract
     data.initial_materials.quantity=0
     data.arrivals.quantity=0
     data.demand.msu=0

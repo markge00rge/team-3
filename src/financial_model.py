@@ -1,4 +1,4 @@
-"""Complete material objective and exact legacy-first A scrap provenance (V6)."""
+"""ABC purchases (V7), historical B expense and exact legacy-first A provenance."""
 import pyomo.environ as pyo
 
 
@@ -33,7 +33,9 @@ def add_material_financials(m, data):
     m.ide_overlap = pyo.Expression(expr=sum(m.a_new_scrap[k]*m.material_unit_price['A',k] for k in m.materials))
     m.a_material_cost = pyo.Expression(expr=sum(m.material_order['A',k,t]*m.material_unit_price['A',k] for k in m.materials for t in m.months))
     m.c_material_cost = pyo.Expression(expr=sum(m.material_order['C',k,t]*m.material_unit_price['C',k] for k in m.materials for t in m.months))
-    m.b_material_cost = pyo.Expression(expr=sum(m.b_material_consumption[k,t]*m.material_unit_price['B',k] for k in m.materials for t in m.months))
+    m.b_material_cost = pyo.Expression(expr=sum(
+        (m.material_order['B',k,t] if m.explicit_b_materials else m.b_material_consumption[k,t])*
+        m.material_unit_price['B',k] for k in m.materials for t in m.months))
     m.operating_cost_full_ide = pyo.Expression(expr=m.total_cost.expr)
     m.reconciled_operating_cost = pyo.Expression(expr=m.operating_cost_full_ide-m.ide_overlap)
     m.total_cost.set_value(m.reconciled_operating_cost + m.a_material_cost+m.c_material_cost+m.b_material_cost)

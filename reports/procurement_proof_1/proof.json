@@ -1,0 +1,23 @@
+{
+  "source": "reports\\v7_resume_validation",
+  "minimum_cost": 9865467.5,
+  "original_events": 10,
+  "original_lower_bound": 7,
+  "variables": {
+    "integer_including_binary": 2186,
+    "binary": 2048
+  },
+  "checks": [
+    {
+      "cap": 9,
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "elapsed_seconds": 602.5,
+      "has_solution": false
+    }
+  ],
+  "best_events": 10,
+  "proven_lower_bound": 7,
+  "all_events_optimal": false,
+  "relative_gap": 0.3
+}

@@ -8,6 +8,20 @@ from math import isfinite
 from itertools import product
 
 
+def case_from_snapshot(source, snapshot):
+    """Restore effective inputs for auditing/reporting; never infer from new defaults."""
+    import pandas as pd
+    case=deepcopy(source)
+    for name in ('months','products','families','lines','hubs','bom','initial_fp','initial_materials','arrivals','demand','rules'):
+        value=deepcopy(snapshot[name])
+        if isinstance(value,dict) and {'columns','data'}<=set(value):
+            frame=pd.DataFrame(value['data'],columns=value['columns'],index=value.get('index'))
+            frame.index.name=value.get('index_name');value=frame
+        if name=='months':value=tuple(value)
+        setattr(case,name,value)
+    return case
+
+
 def editable_case(source, *, rules=None, demand=None, lines=None, hubs=None,
                   initial_fp=None, initial_materials=None, arrivals=None, bom=None):
     case = deepcopy(source)
@@ -21,6 +35,11 @@ def editable_case(source, *, rules=None, demand=None, lines=None, hubs=None,
 
 
 def validate_parameters(data):
+    if data.rules.get('explicit_b_materials',False):
+        expected={(p,k) for p in ('A','B','C') for k in ('RM','PM')}
+        stock=data.initial_materials
+        if stock.duplicated(['product','material']).any() or set(stock[['product','material']].itertuples(index=False,name=None))!=expected:
+            raise ValueError('Exactly one opening RM/PM record per A/B/C product is required')
     if data.rules["weeks_per_month"] != 4:
         raise ValueError("Exactly four weeks / 28 planning days are required")
     if not isfinite(data.rules["training_months"]) or data.rules["training_months"] < 1 or int(data.rules['training_months']) != data.rules['training_months'] or data.rules["changeover_days"] != 1:

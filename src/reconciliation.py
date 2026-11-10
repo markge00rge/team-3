@@ -56,6 +56,10 @@ def calculate(data, tables, status):
     months, products, hubs = tuple(data.months), tuple(data.products), tuple(data.hubs.index)
     from src.financial_model import material_price
     complete='total_delivery_cost' in status['costs']
+    explicit=status.get('material_policy')=='explicit_abc_v7'
+    if explicit:
+        from src.material_policy import planning_case
+        data=planning_case(data,explicit=True)
     orders=tables.get('material_orders',pd.DataFrame())
     from itertools import product
     specs = {
@@ -65,12 +69,47 @@ def calculate(data, tables, status):
         "service": (["hub", "family", "month"], product(hubs, data.families, months)),
         "transport": (["hub", "month"], product(hubs, months)),
         "staffing": (["line", "month"], product(data.lines.index, months)),
-        "material_balances": (["product", "material", "month"], product(("A", "C"), ("RM", "PM"), months)),
+        "material_balances": (["product", "material", "month"], product(("A", "B", "C") if explicit else ("A", "C"), ("RM", "PM"), months)),
         "warehouse": (["month"], ((t,) for t in months)),
     }
     for name, (keys, expected) in specs.items():
         _grid(tables[name], keys, expected, name)
     made = tables["production"].groupby(["product", "month"]).msu.sum()
+    if explicit:
+        stock=data.initial_materials.set_index(['product','material']).quantity.to_dict()
+        order_grid={(r.product,r.material,r.order_month):r for r in orders.itertuples()}
+        _grid(orders,['product','material','order_month'],product(products,('RM','PM'),months),'material orders')
+        for r in orders.itertuples():
+            lot=data.rules['rm_moq_kg' if r.material=='RM' else 'pm_moq_ea']
+            _close(r.quantity,r.integer_lots*lot,'Integer lot quantity')
+            _close(r.integer_lots,round(r.integer_lots),'Whole procurement lots')
+            _close(r.order_event,int(r.quantity>1e-5),'Order-event indicator')
+            year,month=map(int,r.order_month.split('-'));offset=year*12+month-1+int(data.rules['sea_lead_months'])
+            expected=f'{offset//12:04d}-{offset%12+1:02d}'
+            if r.arrival_month!=expected: raise ValueError('Procurement arrival month violates lead time')
+            if expected not in months: _close(r.quantity,0,'No outside-horizon orders')
+        for r in tables['material_balances'].sort_values(['product','material','month']).itertuples():
+            key=(r.product,r.material);i=months.index(r.month)
+            _close(r.opening,stock[key],'Material opening carry-forward')
+            fixed=data.arrivals[(data.arrivals['product']==r.product)&(data.arrivals.material==r.material)&(data.arrivals.date.str[:7]==r.month)].quantity.sum()
+            _close(r.fixed_arrival,fixed,'Fixed material receipts')
+            lead=int(data.rules['sea_lead_months'])
+            arriving=order_grid[r.product,r.material,months[i-lead]].quantity if i>=lead else 0
+            _close(r.additional_arrival,arriving,'Procurement lead-time receipts')
+            col='rm_kg_per_msu' if r.material=='RM' else 'pm_ea_per_msu'
+            _close(r.consumption,made[r.product,r.month]*data.bom.loc[r.product,col],'Actual-production BOM consumption')
+            _close(r.ending,r.opening+r.fixed_arrival+r.additional_arrival-r.consumption-r.scrap,'Material conservation')
+            if r.ending < -1e-5: raise ValueError('Negative material inventory')
+            if r.product!='A': _close(r.scrap,0,'Only A materials may be scrapped')
+            stock[key]=r.ending
+        for r in tables['warehouse'].itertuples():
+            balances=tables['material_balances'][tables['material_balances'].month==r.month]
+            rm=balances.query("material == 'RM'").ending.sum()/data.rules['rm_kg_per_pallet']
+            pm=balances.query("material == 'PM'").ending.sum()/data.rules['pm_ea_per_pallet']
+            _close(r.rm_pallets,rm,'ABC RM pallets');_close(r.pm_pallets,pm,'ABC PM pallets')
+            _close(r.tracked_pallets,r.fp_pallets+rm+pm,'Combined warehouse pallets')
+            if r.tracked_pallets>r.onsite_capacity+data.rules['overflow_block_pallets']*r.external_blocks+1e-5:
+                raise ValueError('Warehouse capacity exceeded')
     sent = tables["shipments"].groupby(["product", "month"]).msu.sum()
     ending = tables["inventory"].set_index(["product", "month"]).msu
     demand = data.demand.set_index(["hub", "family", "month"]).msu
@@ -149,14 +188,15 @@ def calculate(data, tables, status):
                 overlap+=actual*material_price(data,'A',k)
             row['ide_overlap_adjustment_usd']=overlap
             row['operating_expenses_usd']=row['operating_full_ide_usd']-overlap
-            for p in ('A','C'):
+            for p in (('A','B','C') if explicit else ('A','C')):
                 for k in ('RM','PM'):
                     amount=orders.query('product == @p and material == @k and order_month == @t').quantity.sum()
                     row[f'{p.lower()}_{k.lower()}_order_usd']=amount*material_price(data,p,k)
                 row[f'{p.lower()}_material_cost_usd']=row[f'{p.lower()}_rm_order_usd']+row[f'{p.lower()}_pm_order_usd']
-            for k,col in [('RM','rm_kg_per_msu'),('PM','pm_ea_per_msu')]:
-                row[f'b_{k.lower()}_consumption_usd']=made['B',t]*data.bom.loc['B',col]*material_price(data,'B',k)
-            row['b_material_cost_usd']=row['b_rm_consumption_usd']+row['b_pm_consumption_usd']
+            if not explicit:
+                for k,col in [('RM','rm_kg_per_msu'),('PM','pm_ea_per_msu')]:
+                    row[f'b_{k.lower()}_consumption_usd']=made['B',t]*data.bom.loc['B',col]*material_price(data,'B',k)
+                row['b_material_cost_usd']=row['b_rm_consumption_usd']+row['b_pm_consumption_usd']
             row['total_delivery_cost_usd']=row['operating_expenses_usd']+sum(row[f'{p}_material_cost_usd'] for p in ('a','c','b'))
             row['total_modeled_cost_usd']=row['total_delivery_cost_usd']
         cash.append(row)

@@ -39,7 +39,7 @@ def audit_solution(model, tolerance=1e-5):
                 variables_checked=variables, max_violation=maximum, violations=violations)
 
 
-def audit_exported_schedule(data, directory):
+def audit_exported_schedule(data, directory, *, return_model=False):
     """Reconstruct exported variable levels in the original V4 MILP and audit.
 
     Does not optimize, infer missing levels or change proof status. Useful for
@@ -52,8 +52,12 @@ def audit_exported_schedule(data, directory):
     directory = Path(directory)
     from copy import deepcopy
     data=deepcopy(data)
+    if (directory/'effective_inputs.json').exists():
+        from src.parameters import case_from_snapshot
+        data=case_from_snapshot(data,json.loads((directory/'effective_inputs.json').read_text(encoding='utf-8')))
     status=json.loads((directory/'solve_status.json').read_text())
     data.rules['legacy_v5']='total_delivery_cost' not in status.get('costs',{})
+    data.rules['explicit_b_materials']=status.get('material_policy')=='explicit_abc_v7'
     m = build_model(data)
     def read(name):
         return pd.read_csv(directory / f"{name}.csv")
@@ -131,7 +135,7 @@ def audit_exported_schedule(data, directory):
     result["reported_monetary_cost"] = pyo.value(m.total_cost)
     result["reported_international_events"] = pyo.value(m.additional_order_events)
     result["all_lexicographic_stages_optimal"] = status["success"]
-    return result
+    return (result, m) if return_model else result
 
 
 if __name__ == "__main__":
@@ -140,7 +144,7 @@ if __name__ == "__main__":
     from pathlib import Path
     from src.data_loader import load_case
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report-dir", type=Path, default=Path("reports/v4"))
+    parser.add_argument("--report-dir", type=Path, default=Path("reports/v7"))
     args = parser.parse_args()
     result = audit_exported_schedule(load_case(), args.report_dir)
     (args.report_dir / "solution_audit.json").write_text(json.dumps(result, indent=2))

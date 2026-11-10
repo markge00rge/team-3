@@ -1,3 +1,13 @@
+# Active V7: explicit A/B/C material procurement
+
+See [V7_SCOPE.md](V7_SCOPE.md) for the current formulation. Product B now has
+editable adopted opening stocks (200,000 kg RM / 750,000 EA PM), explicit
+procurement, conservation and warehouse space. All new ABC material orders
+are charged at placement; the former B production expense is removed. Older
+V6 sections below are historical. Saved runs retain their original versions.
+
+---
+
 # Persistent saved runs
 
 See [SAVED_RUNS_GUIDE.md](SAVED_RUNS_GUIDE.md) for named optimizations, local SQLite

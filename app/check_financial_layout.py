@@ -13,6 +13,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--output-dir',type=Path,default=ROOT/'reports/saved_runs_ui_layout')
     parser.add_argument('--comparison',action='store_true')
+    parser.add_argument('--explicit-b',action='store_true')
     options=parser.parse_args()
     browser=Path('C:/Program Files/Google/Chrome/Application/chrome.exe')
     if not browser.exists(): raise RuntimeError('Chrome is required for this optional layout audit')
@@ -22,7 +23,7 @@ def main():
     css=next(n.value for n in ast.walk(parsed) if isinstance(n,ast.Constant) and isinstance(n.value,str) and '<style>' in n.value)
     costs=dict(operating_expenses=1234567890123.125,a_materials=123456789.125,c_materials=12345678.123456,
         b_materials=950000,total_delivery_cost=1.234567890123e18)
-    cards=card_html(costs)
+    cards=card_html(costs,explicit_b=options.explicit_b)
     if options.comparison: cards='<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;">'+cards+cards+'</div>'
     html='<!doctype html><html><head><meta charset="utf-8">'+css+'''<style>body{margin:0;background:#f4f7fb;font-family:Arial;}main{margin-left:280px;padding:24px;max-width:1450px;box-sizing:border-box;}pre{white-space:pre-wrap;overflow-wrap:anywhere;}</style></head><body><main>'''+cards+'''<pre id="audit"></pre></main><script>
     const violations=[];for(const el of document.querySelectorAll('.finance-card,.finance-label,.finance-value')){

@@ -148,13 +148,13 @@ def main():
     from src.data_loader import load_case, validate_case
     from src.model import build_model
     from src.results import extract_results, format_summary, write_results
-    parser = argparse.ArgumentParser(description="V6 strict Scenario A only")
-    parser.add_argument("--output-dir", type=Path, default=Path("reports/v6"))
+    parser = argparse.ArgumentParser(description="V7 strict Scenario A / explicit ABC procurement")
+    parser.add_argument("--output-dir", type=Path, default=Path("reports/v7"))
     parser.add_argument("--time-limit", type=float, default=120, help="Seconds per stage; nonoptimal stages are reported honestly")
     parser.add_argument("--tee", action="store_true")
     args = parser.parse_args()
     from src.data_loader import ROOT
-    for name in ("v2", "v2_1", "v4", "v5"):
+    for name in ("v2", "v2_1", "v4", "v5", "v6"):
         historical = (ROOT / "reports" / name).resolve()
         target = args.output_dir.resolve()
         if target == historical or historical in target.parents:
@@ -164,8 +164,11 @@ def main():
     if errors:
         print("Input validation failed: " + str(errors))
         return 1
+    if (args.output_dir/'solve_status.json').exists(): parser.error('Use a fresh directory; existing solver results are immutable.')
+    from src.material_policy import planning_case
+    data=planning_case(data)
     model = build_model(data)
-    print("V6 Scenario A only: 12 months x 28 planning days; exact monthly family priorities", flush=True)
+    print("V7 Scenario A only: explicit ABC materials; 12 months x 28 planning days", flush=True)
     outcome = solve_lexicographic(model, time_limit=args.time_limit, progress=True, tee=args.tee)
     print(outcome.message)
     for stage in outcome.stages:
@@ -190,7 +193,7 @@ def main():
         import json
         args.output_dir.mkdir(parents=True, exist_ok=True)
         (args.output_dir / "solve_status.json").write_text(json.dumps(outcome.__dict__, indent=2))
-    print("B physical material space unspecified/excluded; PM expiry unverified; both C:D diagnostics reported.")
+    print("ABC material space tracked; PM expiry unverified; both C:D diagnostics reported.")
     print("Month-end warehouse checks do not verify intramonth peaks. See MODEL_SCOPE.md.")
     return 0 if outcome.success or (outcome.minimum_cost is not None and model._has_incumbent and audit["passed"]) else 1
 

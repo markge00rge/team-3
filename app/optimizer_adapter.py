@@ -1,4 +1,4 @@
-"""The sole UI-to-V5 execution path; no mathematical model lives in app/."""
+"""The UI-to-existing-engine execution path; no mathematical model lives in app/."""
 from dataclasses import asdict
 from hashlib import sha256
 import json
@@ -50,7 +50,7 @@ def execute(scenario: Scenario, directory, *, time_limit=180, notify=None, scena
         notify("extraction","completed",{})
         notify("dashboard","running",{})
         tables = {name:getattr(results,name) for name in INPUT_TABLES}
-        status = dict(stages=outcome.stages,costs=results.costs)
+        status = dict(stages=outcome.stages,costs=results.costs,material_policy=results.material_policy)
         financial = calculate(data,tables,status)
         tables.update({n:getattr(results,n) for n in ("daily_schedule","line_capacity","material_orders")})
         derived = calculate_kpis(data,tables,financial)
@@ -67,7 +67,10 @@ def execute(scenario: Scenario, directory, *, time_limit=180, notify=None, scena
         from uuid import uuid4
         metadata_path=directory/'request_metadata.json'
         metadata=json.loads(metadata_path.read_text()) if metadata_path.exists() else {}
-        completion.update(model_version=MODEL_VERSION,financial_version=FINANCIAL_VERSION)
+        explicit=results.material_policy=='explicit_abc_v7'
+        completion.update(material_policy=results.material_policy,
+            model_version=MODEL_VERSION if explicit else 'Venus V6 / strict Scenario A',
+            financial_version=FINANCIAL_VERSION if explicit else 'venus-v6-reconciled-materials-1')
         all_tables={f.name:getattr(results,f.name) for f in fields(results) if isinstance(getattr(results,f.name),pd.DataFrame)}
         all_tables.update(derived)
         try:
@@ -77,7 +80,7 @@ def execute(scenario: Scenario, directory, *, time_limit=180, notify=None, scena
                 completion,all_tables,results.transition,audit,run_id=saved_id,
                 source_run_id=directory.name,created_at=metadata.get('created_at'),
                 scenario_type=scenario_type or ('Original' if scenario.values==original_scenario().values else 'Customized'),
-                assumptions={p.name:p.read_text(encoding='utf-8') for p in (ROOT/'ASSUMPTIONS.md',ROOT/'V6_SCOPE.md') if p.exists()})
+                assumptions={p.name:p.read_text(encoding='utf-8') for p in (ROOT/'ASSUMPTIONS.md',ROOT/'V7_SCOPE.md') if p.exists()})
             RunStore().save_run(record)
             notify('saving','completed',dict(run_id=saved_id))
         except Exception as exc:

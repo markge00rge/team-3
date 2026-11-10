@@ -60,7 +60,7 @@ class Scenario:
             raise ValueError("Scenario schema version must be an integer")
         scenario = cls(**obj)
         if scenario.schema_version == 1:
-            original=original_scenario()
+            original=original_scenario(schema_version=2)
             added={'flexible_workforce','rule.dismissal_usd_per_operator','rule.training_months','rule.upgrade_operators_per_line'}
             oldkeys={k for k in original.values if not k.startswith('price.') and k not in added}|{'rule.rm_usd_per_kg','rule.pm_usd_per_ea'}
             if set(scenario.values)!=oldkeys: raise ValueError('Unsupported historical scenario fields')
@@ -81,9 +81,9 @@ class Scenario:
 
     def validate(self, source=None):
         source = source or load_case()
-        expected = original_scenario(source).values
-        if self.schema_version != 2 or isinstance(self.schema_version,bool):
+        if self.schema_version not in (2,3) or isinstance(self.schema_version,bool):
             raise ValueError("Unsupported scenario schema version")
+        expected = original_scenario(source,schema_version=self.schema_version).values
         if not isinstance(self.name,str) or not self.name.strip() or len(self.name)>100:
             raise ValueError("Use a scenario name between 1 and 100 characters")
         if not isinstance(self.values,dict) or set(self.values) != set(expected):
@@ -110,14 +110,15 @@ class Scenario:
         return self
 
     def changes(self, source=None):
-        original = original_scenario(source).values
+        original = original_scenario(source,schema_version=self.schema_version).values
         return pd.DataFrame([dict(parameter=k,original=original[k],modified=v)
             for k,v in self.values.items() if v != original[k]], columns=["parameter","original","modified"])
 
     def to_case(self, source=None):
         source = source or load_case()
         self.validate(source)
-        case = deepcopy(source)
+        from src.material_policy import planning_case
+        case = planning_case(source,explicit=self.schema_version>=3)
         for key,value in self.values.items():
             parts = key.split(".")
             kind = parts[0]
@@ -142,9 +143,17 @@ class Scenario:
         validate_parameters(case)
         return case
 
+    def upgrade(self):
+        """Explicit conversion for a NEW run; never modifies stored results."""
+        out=original_scenario()
+        out.name=self.name
+        out.values.update({k:v for k,v in self.values.items() if k in out.values})
+        return out
 
-def original_scenario(source=None):
-    data = source or load_case()
+
+def original_scenario(source=None, *, schema_version=3):
+    from src.material_policy import planning_case
+    data = planning_case(source or load_case(),explicit=schema_version>=3)
     defaults={'dismissal_usd_per_operator':0}
     v = {"rule."+k:float(data.rules.get(k,defaults.get(k))) for k in RULE_FIELDS}
     v['flexible_workforce']=data.rules.get('flexible_workforce',True)
@@ -158,7 +167,7 @@ def original_scenario(source=None):
     for p in data.products:
         v["initial_fp."+p] = float(data.initial_fp[p])
         v[f"bom.{p}.fp_usd_per_msu"] = float(data.bom.loc[p,"fp_usd_per_msu"])
-        if p != "B":
+        if p != "B" or schema_version>=3:
             for col in ("rm_kg_per_msu","pm_ea_per_msu"):
                 v[f"bom.{p}.{col}"] = float(data.bom.loc[p,col])
     for r in data.initial_materials.itertuples():
@@ -168,7 +177,7 @@ def original_scenario(source=None):
         for col in ("truck_usd","unserved_usd_per_msu"):
             v[f"hub.{h}.{col}"] = float(data.hubs.loc[h,col])
     for r in data.demand.itertuples(): v[f"demand.{r.hub}.{r.family}.{r.month}"] = float(r.msu)
-    return Scenario(2,"Original Venus",v)
+    return Scenario(schema_version,"Original Venus",v)
 
 
 def demand_frame(scenario, source=None):

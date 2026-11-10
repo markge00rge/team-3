@@ -92,7 +92,7 @@ def configured_parameters():
         st.json(effective['initial_fp'])
         table(_rules(effective,{'material_unit_prices','rm_usd_per_kg','pm_usd_per_ea','rm_moq_kg','pm_moq_ea','sea_lead_months',
             'rm_kg_per_pallet','pm_ea_per_pallet','pm_kg_per_1000_ea','disposal_usd_per_ton'}))
-        st.caption('Product B smooth replenishment: no physical stock or discrete procurement assumptions are invented.')
+        st.caption('Product B RM/PM is explicitly balanced and ordered; opening quantities are adopted assumptions.' if effective['rules'].get('explicit_b_materials') else 'Historical Product B smooth replenishment: physical stock was unspecified.')
     with sections[3]:
         table(restore_frame(effective['lines'])[['operators']].reset_index())
         table(_rules(effective,{'operator_usd_per_month','hiring_usd_per_operator','dismissal_usd_per_operator',
@@ -125,7 +125,7 @@ def comparison_page():
             st.caption(f"{r['scenario_type']} · {r['created_at']} · {r['model_version']} · {r['financial_version']}")
             c=r['results']['completion']
             st.caption('All stages optimal' if c['outcome']['success'] else c['outcome']['message'])
-            if 'total_delivery_cost' in c['costs']: financial_cards(c['costs'])
+            if 'total_delivery_cost' in c['costs']: financial_cards(c['costs'],explicit_b=c.get('material_policy')=='explicit_abc_v7')
             else: st.info('Historical operating-only accounting. No Total Delivery Cost was saved.')
     for message in warnings(a,b): st.warning(message)
     compatible=a['financial_version']==b['financial_version']

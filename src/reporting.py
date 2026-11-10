@@ -13,6 +13,9 @@ def generate_reports(data, directory, baseline=ROOT / "reports/v4"):
     if directory.resolve() == baseline.resolve():
         raise ValueError("V5 reporting must not overwrite the historical V4 baseline")
     tables, status = read_saved(directory)
+    if status.get('material_policy')=='explicit_abc_v7' and (directory/'effective_inputs.json').exists():
+        from src.parameters import case_from_snapshot
+        data=case_from_snapshot(data,json.loads((directory/'effective_inputs.json').read_text(encoding='utf-8')))
     if 'total_delivery_cost' in status['costs']:
         from src.report_v6 import generate
         return generate(data,directory)
@@ -145,7 +148,7 @@ def generate_reports(data, directory, baseline=ROOT / "reports/v4"):
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--report-dir", type=Path, default=ROOT / "reports/v5")
+    parser.add_argument("--report-dir", type=Path, default=ROOT / "reports/v7")
     args = parser.parse_args()
     generate_reports(load_case(), args.report_dir)
     print(f"Reports regenerated without solving: {args.report_dir}")

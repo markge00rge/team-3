@@ -7,9 +7,10 @@ def initialize(state, source=None):
     for k,v in defaults.items():
         if k not in state: state[k] = v
     if state["scenario"] is None: state["scenario"] = original_scenario(source)
-    if state['scenario'].schema_version==1:
+    if state['scenario'].schema_version<3:
         from app.scenarios import Scenario
-        state['scenario']=Scenario.from_json(state['scenario'].to_json())
+        state['scenario']=Scenario.from_json(state['scenario'].to_json()).upgrade()
+        state['migration_notice']='Editable draft upgraded to V7: explicit B stocks default to RM 200,000 kg / PM 750,000 EA. Historical saved results are unchanged.'
         state['revision']+=1
 
 
@@ -28,5 +29,8 @@ def navigate(state, page):
 
 def load_scenario(state, scenario):
     scenario.validate()
+    if scenario.schema_version<3:
+        scenario=scenario.upgrade()
+        state['migration_notice']='Imported parameters upgraded for a NEW V7 run with explicit B opening stocks. Saved historical results are unchanged.'
     state["scenario"] = scenario.clone()
     state["revision"] += 1

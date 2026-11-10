@@ -12,7 +12,7 @@ def compact_currency(value):
     return f'${value:,.0f}'
 
 
-def card_html(costs):
+def card_html(costs, *, explicit_b=False):
     entries=[('Operating Expenses','operating_expenses','Full operating costs including IDE less the disclosed new-A scrap overlap.'),
         ('Additional A Materials','a_materials','New A RM/PM orders only, charged at placement.'),
         ('Additional C Materials','c_materials','New C RM/PM orders only, charged at placement.'),
@@ -20,6 +20,11 @@ def card_html(costs):
         ('TOTAL DELIVERY COST','total_delivery_cost','Modeled supply chain planning cost including specified material expenses; not transportation expense alone.')]
     cards={}
     for label,key,explanation in entries:
+        if explicit_b:
+            label={'operating_expenses':'Operating Expenses — Excluding Material Purchases',
+                'a_materials':'Additional Product A Material Cost','c_materials':'Additional Product C Material Cost',
+                'b_materials':'Additional Product B Material Cost'}.get(key,label)
+            if key=='b_materials': explanation='Additional Product B RM and PM purchase orders only, charged at placement. No expense on consumption or receipt.'
         exact=repr(float(costs[key]))
         title=escape(f'{explanation} Exact unrounded USD: {exact}',quote=True)
         classes='finance-card total-card' if key=='total_delivery_cost' else 'finance-card'
@@ -31,7 +36,7 @@ def card_html(costs):
 
 
 
-def render(costs):
+def render(costs, *, explicit_b=False):
     st.markdown('''<style>
     .finance-grid{margin:12px 0 24px;min-width:0;container-type:inline-size;}.finance-main,.finance-materials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px;}.finance-materials{grid-template-columns:repeat(3,minmax(0,1fr));}
     .finance-card{box-sizing:border-box;min-width:0;min-height:145px;background:white;border:1px solid #dce6ee;border-radius:16px;padding:22px;}
@@ -44,6 +49,6 @@ def render(costs):
     [data-testid="stMetricValue"]{font-size:clamp(1rem,1.8vw,1.9rem)!important;white-space:normal!important;overflow-wrap:anywhere;}
     [data-testid="stMetricLabel"]{white-space:normal!important;overflow-wrap:anywhere;}
     </style>''',unsafe_allow_html=True)
-    st.markdown(card_html(costs),unsafe_allow_html=True)
+    st.markdown(card_html(costs,explicit_b=explicit_b),unsafe_allow_html=True)
     with st.expander('Exact financial amounts and IDE adjustment'):
         st.json({k:costs[k] for k in ('operating_full_ide','ide_overlap_adjustment','operating_expenses','a_materials','c_materials','b_materials','total_delivery_cost')})

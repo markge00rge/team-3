@@ -63,18 +63,22 @@ def materials():
         with col:
             number(f'price.{p}.RM',f'Product {p} RM ($/kg)')
             number(f'price.{p}.PM',f'Product {p} PM ($/EA)')
-    for col,p in zip(st.columns(2),("A","C")):
+    for col,p in zip(st.columns(3),("A","B","C")):
         with col,st.container(border=True):
             st.subheader("Product "+p)
             number(f"bom.{p}.rm_kg_per_msu","RM consumption (kg/MSU) — "+p)
             number(f"bom.{p}.pm_ea_per_msu","PM consumption (EA/MSU) — "+p)
             number(f"stock.{p}.RM","Opening RM (kg) — "+p)
             number(f"stock.{p}.PM","Opening PM (EA) — "+p)
+            if p=='B':
+                settings=st.session_state.scenario.values
+                st.caption(f"Previously committed B shipments: None. RM lot {settings['rule.rm_moq_kg']:,.0f} kg; PM lot {settings['rule.pm_moq_ea']:,.0f} EA; lead time {settings['rule.sea_lead_months']:g} planning months. Edit shared procurement settings below.")
     with st.expander("Scheduled receipts · dates and material identities locked",expanded=True):
         for i,r in st.session_state.source.arrivals.iterrows():
             number(f"receipt.{i}",f"{r['product']} {r['material']} · {str(r['date'])[:10]} · {r['unit']}")
     with st.expander("Ordering lots, sea freight, values, pallet factors & disposal",expanded=False): rules(3)
-    st.caption("A/C: new orders charged at placement; opening stocks and fixed receipts are not charged again. B: material expense follows production, with no B stock or order variables. Physical B stock/space remains unspecified.")
+    st.info('Product B RM and packaging are now explicitly tracked. New materials must be ordered three months in advance, subject to minimum order increments, and unused inventory occupies warehouse space.')
+    st.caption('B opening RM 200,000 kg / PM 750,000 EA are adopted clarification assumptions, not numerical opening quantities in the original Word/Excel files. All A/B/C new purchases are charged at placement; opening inventory and fixed receipts are not charged again.')
 
 
 def workforce():
@@ -93,7 +97,7 @@ def warehouse():
     for col,p in zip(st.columns(3),st.session_state.source.products):
         with col: number(f"bom.{p}.fp_usd_per_msu",f"Product {p} FP value ($/MSU)")
     st.info("FP valuation is inventory value, not selling price. Holding expense = ending FP value × monthly rate. Inventory cash is not another operating expense.")
-    st.caption("External 3PL is available; availability is read-only. Full booking blocks are charged. Month-end checks exclude unspecified B material space and do not establish intramonth peaks.")
+    st.caption('External 3PL is available; full booking blocks are charged. Month-end checks include all A/B/C FP, RM and PM, but do not establish intramonth peaks.')
 
 
 def distribution():

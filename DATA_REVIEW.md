@@ -1,3 +1,12 @@
+# V7 clarification / adopted assumptions
+
+The user adopted B opening RM 200,000 kg and PM 750,000 EA following P&G
+clarification. These numerical stocks are not in the original Word/Excel files.
+V7 supersedes the original smooth-B modeling policy with explicit B inventory,
+new orders, lots, three-month lead time and tracked warehouse footprint. There
+are no fixed B receipts. Original source documents and historical reports are
+unchanged. See V7_SCOPE.md; source observations below remain historical facts.
+
 # Source extraction and validation
 
 V5 active interpretation is centralized in [ASSUMPTIONS.md](ASSUMPTIONS.md).

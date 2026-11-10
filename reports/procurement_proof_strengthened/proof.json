@@ -1,0 +1,37 @@
+{
+  "source": "reports\\v7",
+  "minimum_cost": 9865467.5,
+  "original_events": 10,
+  "original_lower_bound": 8,
+  "variables": {
+    "integer_including_binary": 2186,
+    "binary": 2048
+  },
+  "checks": [
+    {
+      "cap": 9,
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "elapsed_seconds": 605.2029999999941,
+      "has_solution": false
+    }
+  ],
+  "best_events": 10,
+  "proven_lower_bound": 8,
+  "all_events_optimal": false,
+  "integer_cover_cuts": 18,
+  "solver_versions": {
+    "highs": "1.15.1",
+    "pyomo": "6.10.1"
+  },
+  "settings": {
+    "total_seconds": 600.0,
+    "threads": 1,
+    "presolve": "on",
+    "mip_rel_gap": 0,
+    "mip_abs_gap": 0,
+    "mip_feasibility_tolerance": 1e-08,
+    "cost_tolerance": 0
+  },
+  "relative_gap": 0.2
+}

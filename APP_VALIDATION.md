@@ -1,3 +1,10 @@
+# Current V7 compatibility
+
+New runs use explicit B procurement and stock: see [V7_SCOPE.md](V7_SCOPE.md).
+Prior V6 validation figures below are historical; saved snapshots are unchanged.
+Comparisons across these financial definitions warn and withhold monetary
+differences. Current validation is in reports/v7_validation/VALIDATION.md.
+
 # Venus interactive application: implementation and validation
 
 Validated on 2026-11-09 in branch `v5-development`. Pre-existing workspace

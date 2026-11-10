@@ -64,7 +64,7 @@ def calculate_kpis(data, tables, financial):
     cash_rows = []
     for t in data.months:
         cash_rows.append(dict(month=t, ending_fp_value_usd=cash[t],
-            cash_tied_up_fp_usd=cash[t], tracked_ac_material_value_usd=material.query("month == @t").inventory_value_usd.sum(),
+            cash_tied_up_fp_usd=cash[t], **{('tracked_abc_material_value_usd' if data.rules.get('explicit_b_materials',False) else 'tracked_ac_material_value_usd'):material.query("month == @t").inventory_value_usd.sum()},
             working_capital_holding_expense_usd=financial.costs.query("month == @t").fp_holding_usd.item()))
     operations = indicators.copy().set_index("month")
     def attach(frame, index, columns, prefix):

@@ -1,0 +1,19 @@
+{"name": "validation", "state": "running", "detail": {}}
+{"name": "validation", "state": "completed", "detail": {}}
+{"name": "building", "state": "running", "detail": {}}
+{"name": "building", "state": "completed", "detail": {}}
+{"name": "service_H1", "state": "running", "detail": {}}
+{"name": "service_H1", "state": "completed", "detail": {"name": "service_H1", "status": "ok", "termination": "optimal", "lower_bound": 0.0, "upper_bound": 0.0, "relative_gap": 0.0}}
+{"name": "service_H2", "state": "running", "detail": {}}
+{"name": "service_H2", "state": "completed", "detail": {"name": "service_H2", "status": "ok", "termination": "optimal", "lower_bound": 0.0, "upper_bound": 0.0, "relative_gap": 0.0}}
+{"name": "service_H3", "state": "running", "detail": {}}
+{"name": "service_H3", "state": "completed", "detail": {"name": "service_H3", "status": "ok", "termination": "optimal", "lower_bound": 0.0, "upper_bound": 0.0, "relative_gap": 0.0}}
+{"name": "modeled_cost", "state": "running", "detail": {}}
+{"name": "modeled_cost", "state": "completed", "detail": {"name": "modeled_cost", "status": "ok", "termination": "optimal", "lower_bound": 9865467.5, "upper_bound": 9865467.5, "relative_gap": 0.0}}
+{"name": "international_order_events", "state": "running", "detail": {}}
+{"name": "international_order_events", "state": "stopped", "detail": {"name": "international_order_events", "status": "aborted", "termination": "maxTimeLimit", "lower_bound": 8.0, "upper_bound": 10.0, "relative_gap": 0.2}}
+{"name": "extraction", "state": "running", "detail": {}}
+{"name": "extraction", "state": "completed", "detail": {}}
+{"name": "dashboard", "state": "running", "detail": {}}
+{"name": "saving", "state": "completed", "detail": {"run_id": "fbf7d657d22141d4b70ab346a9aeb1a0"}}
+{"name": "dashboard", "state": "completed", "detail": {}}
