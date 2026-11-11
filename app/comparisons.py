@@ -43,6 +43,7 @@ LABELS={
     'profile':'Base schedule','operators':'Permanent operators','priority':'Service priority',
     'qualification_days':'Qualification shutdown days','qualification_allowed_months':'Allowed qualification months'}
 LABELS.update({'AC':'A/C combined','RM':'Raw materials','PM':'Packaging materials'})
+LABELS['shipment_consolidation_policy']='International Shipment Consolidation'
 
 
 def input_flat(record):
@@ -63,6 +64,8 @@ def input_flat(record):
             for k,v in value.items(): walk(v,f'{path}.{k}' if path else k)
         else: output[path]=value
     for k,v in record['effective_inputs'].items(): walk(v,k)
+    from src.shipment_policy import historical_policy
+    output.setdefault('rules.shipment_consolidation_policy',historical_policy(record['results']['completion'],record['model_version']))
     return output
 
 
@@ -75,6 +78,10 @@ def changed_inputs(a,b):
     for key in sorted(set(aa)|set(bb)):
         av,bv=aa.get(key),bb.get(key)
         if av==bv: continue
+        if key=='rules.shipment_consolidation_policy':
+            from src.shipment_policy import POLICIES
+            av=POLICIES[av][0] if av in POLICIES else 'Legacy / Unknown Policy'
+            bv=POLICIES[bv][0] if bv in POLICIES else 'Legacy / Unknown Policy'
         label=' / '.join(labels.get(part,part.replace('_',' ').capitalize()) for part in key.split('.'))
         rows.append(dict(parameter=label,scenario_a=av,scenario_b=bv,difference=difference(av,bv)))
     return pd.DataFrame(rows,columns=['parameter','scenario_a','scenario_b','difference'])
@@ -141,6 +148,10 @@ def service_comparison(a,b,keys=('month',)):
 
 def warnings(a,b):
     messages=[]
+    from src.shipment_policy import historical_policy
+    policies=[historical_policy(r['results']['completion'],r['model_version']) for r in (a,b)]
+    if policies[0]!=policies[1]:
+        messages.append('Shipment policies use different dispatch-batch grouping definitions. Compare Material Order Lines on a common basis; fewer batches do not prove fewer physical containers. Inspect each shipment-stage proof status separately.')
     if a['financial_version']!=b['financial_version']:
         messages.append('Financial definitions differ. Monetary differences and percentage changes are withheld; saved figures remain visible.')
         if any('v7' in r['financial_version'] for r in (a,b)):

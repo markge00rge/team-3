@@ -25,6 +25,8 @@ class ModelResults:
     transition: dict = field(default_factory=dict)
     storage_peaks: pd.DataFrame = field(default_factory=pd.DataFrame)
     material_policy: str = 'legacy_ac_smooth_b'
+    shipment_consolidation_policy: str = 'independent_materials'
+    international_shipment_schedule: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def extract_results(model, *, allow_incumbent=False) -> ModelResults:
@@ -90,6 +92,12 @@ def extract_results(model, *, allow_incumbent=False) -> ModelResults:
             result.b_material_consumption['rm_expense_usd']=result.b_material_consumption.rm_kg*value(m.material_unit_price['B','RM'])
             result.b_material_consumption['pm_expense_usd']=result.b_material_consumption.pm_ea*value(m.material_unit_price['B','PM'])
             result.b_material_consumption['material_expense_usd']=result.b_material_consumption.rm_expense_usd+result.b_material_consumption.pm_expense_usd
+    from src.shipment_policy import shipment_schedule
+    result.shipment_consolidation_policy=m.shipment_consolidation_policy
+    result.international_shipment_schedule=shipment_schedule(result.material_orders,m.shipment_consolidation_policy,
+        rm_kg_per_pallet=1/m.inventory_pallet_factors['RM'],pm_ea_per_pallet=1/m.inventory_pallet_factors['PM'])
+    if len(result.international_shipment_schedule)!=round(value(m.international_shipments)):
+        raise ValueError('Shipment groups do not reconcile to the MILP indicators')
     return result
 
 
@@ -185,7 +193,8 @@ def format_summary(results: ModelResults) -> str:
             "L2 actual changeover planning days:", results.daily_schedule.query("line == 'L2' and changeover > 0.5").to_string(index=False),
             "Conservative storage diagnostic: all shipments at month-end; not a verified daily delivery plan.",
             results.storage_peaks.groupby("month").tracked_pallets.max().to_string()])
-    lines.extend([f"Additional material-specific international order events: {results.material_orders.order_event.sum():.0f}",
+    lines.extend([f"International dispatch batches ({results.shipment_consolidation_policy}): {len(results.international_shipment_schedule)}",
+        f"Material Order Lines (positive material-category orders): {results.material_orders.order_event.sum():.0f}",
         "Fixed incoming shipments (not optimized/new events):", results.fixed_receipts.to_string(index=False),
         "Monthly production by product (MSU):", results.production.groupby(["month", "product"]).msu.sum().unstack().to_string(),
         "Monthly service by hub (MSU):", results.service.groupby(["month", "hub"])[["demand_msu", "served_msu", "unserved_msu"]].sum().to_string(),
@@ -212,7 +221,7 @@ def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent
     directory.mkdir(parents=True, exist_ok=True)
     for name in ("production", "inventory", "shipments", "service", "transport",
                  "material_balances", "material_orders", "b_material_consumption", "warehouse", "fixed_receipts",
-                 "daily_schedule", "daily_material", "staffing", "line_capacity", "storage_peaks"):
+                 "daily_schedule", "daily_material", "staffing", "line_capacity", "storage_peaks", "international_shipment_schedule"):
         getattr(results, name).to_csv(directory / f"{name}.csv", index=False)
     service_monthly = results.service.groupby(["hub", "month"])[["demand_msu", "served_msu", "unserved_msu"]].sum()
     service_monthly["service_percent"] = 100 * service_monthly.served_msu / service_monthly.demand_msu.where(service_monthly.demand_msu > 0)
@@ -225,10 +234,14 @@ def write_results(results: ModelResults, outcome, output_dir, *, allow_incumbent
          "B materials smoothly replenished; physical stock unspecified.\nMonth-end warehouse includes tracked FP and A/C materials only; intramonth peaks unverified.\n") +
         "PM expiry unverified; C:D is diagnostic, not constrained. See ASSUMPTIONS.md.\n"
         f"Minimum monetary cost: {outcome.minimum_cost}; allowed maximum: {outcome.cost_limit}\n\n"
+        f"Shipment policy: {results.shipment_consolidation_policy}; international dispatch batches: {len(results.international_shipment_schedule)}; material order lines: {int((results.material_orders.quantity>1e-5).sum())}\n"
         + format_summary(results), encoding="utf-8")
     (directory / "solve_status.json").write_text(json.dumps(
         dict(success=outcome.success, message=outcome.message, stages=outcome.stages,
              minimum_cost=outcome.minimum_cost, cost_limit=outcome.cost_limit,
+             shipment_consolidation_policy=results.shipment_consolidation_policy,
+             international_shipments=len(results.international_shipment_schedule),
+             material_order_lines=int((results.material_orders.quantity>1e-5).sum()),
              material_policy=results.material_policy,costs=results.costs), indent=2), encoding="utf-8")
     if results.transition:
         (directory / "transition_ide.json").write_text(json.dumps(results.transition, indent=2), encoding="utf-8")

@@ -50,7 +50,7 @@ def kpis(completion,t):
         a_materials=completion['costs'].get('a_materials'),c_materials=completion['costs'].get('c_materials'),
         b_materials=completion['costs'].get('b_materials'),total_delivery_cost=completion['costs'].get('total_delivery_cost'),
         fulfilled=shipments,unserved=float(t["service"].unserved_msu.sum()),production=production,
-        utilization=production/capacity if capacity else None,events=float(t["material_orders"].order_event.sum()),
+        utilization=production/capacity if capacity else None,events=float((t["material_orders"].quantity>1e-5).sum()),
         peak=float(t["warehouse"].tracked_pallets.max()),holding=completion["costs"]["fp_holding"],
         ide=completion["costs"]["ide"],external=completion["costs"]["external_storage"])
 
@@ -95,6 +95,16 @@ def render(directory=None, *, record=None):
             with st.expander(name.replace('_',' ').title()): table(frame)
         return
     k=kpis(completion,t)
+    from src.shipment_policy import POLICIES, historical_policy
+    policy=historical_policy(completion,record.get('model_version','') if record else completion.get('model_version',''))
+    st.subheader('International shipment consolidation')
+    st.caption(POLICIES[policy][0] if policy else 'Legacy / Unknown Policy')
+    a,b=st.columns(2)
+    a.metric('International Shipments',completion.get('international_shipments',int(k['events']) if policy=='independent_materials' else 'Unavailable'))
+    b.metric('Material Order Lines',completion.get('material_order_lines',int(k['events'])))
+    st.caption('Dispatch batches, not physical containers. A feasible count is not a proven minimum; inspect solver bounds.')
+    if 'international_shipment_schedule' in t:
+        with st.expander('International shipment schedule'):table(t['international_shipment_schedule'])
     complete='total_delivery_cost' in completion['costs']
     if complete:
         from app.components.financial_cards import render as financial_cards
@@ -104,7 +114,7 @@ def render(directory=None, *, record=None):
         ("Annual customer service",f"{k['service']:.2%}" if k["service"] is not None else "No demand"),
         ("Demand fulfilled",f"{k['fulfilled']:,.1f} MSU"),("Unserved demand",f"{k['unserved']:,.1f} MSU"),
         ("Total production",f"{k['production']:,.1f} MSU"),("Capacity utilization",f"{k['utilization']:.1%}" if k["utilization"] is not None else "N/A"),
-        ("Procurement events",f"{k['events']:.0f}"),("Peak tracked warehouse",f"{k['peak']:,.1f} pallets"),
+        ("Material Order Lines",f"{k['events']:.0f}"),("Peak tracked warehouse",f"{k['peak']:,.1f} pallets"),
         ("External storage",f"${k['external']:,.2f}"),("FP holding expense",f"${k['holding']:,.2f}"),
         ("Product A IDE",f"${k['ide']:,.2f}"),("Solver proof", "7 / 7 stages" if completion["outcome"]["success"] else "Partial proof")]
     if complete: cards=[item for item in cards if item[0] not in ('Minimum modeled annual cost','Feasible plan cost','External storage','FP holding expense','Product A IDE')]

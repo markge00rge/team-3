@@ -83,7 +83,9 @@ def test_export_workbook_and_dashboard_render_actual_outputs():
     at.session_state.screen="results"
     at.run()
     assert not at.exception
-    assert len(at.metric)==12
+    assert len(at.metric)==14
+    assert any(x.label=='International Shipments' for x in at.metric)
+    assert any(x.label=='Material Order Lines' for x in at.metric)
     assert len(at.get("plotly_chart"))>=12
     assert len(at.get("download_button"))>=10
 

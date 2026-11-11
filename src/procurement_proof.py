@@ -69,6 +69,8 @@ def run(source, output, *, seconds=600, threads=1, strengthen=False):
     if output.exists():
         raise ValueError('Use a fresh proof output directory; existing reports are preserved.')
     status=json.loads((source/'solve_status.json').read_text())
+    if status.get('shipment_consolidation_policy','independent_materials')!='independent_materials':
+        raise ValueError('Material-category event proof mode supports independent_materials only.')
     stages=status['stages']
     cost=next(s for s in stages if s['name']=='modeled_cost')
     if cost['termination']!='optimal' or cost['status']!='ok':

@@ -1,3 +1,11 @@
+# Current V8: configurable international dispatch policies
+
+The current engine supports three selectable shipment-counting policies. See
+[SHIPMENT_CONSOLIDATION_POLICIES.md](SHIPMENT_CONSOLIDATION_POLICIES.md).
+Physical and monetary rules remain the explicit-ABC V7 formulation; Policy 1 is
+the backward-compatible default. Actual results and solver bounds are in
+`reports/shipment_policy_validation/RESULTS.md`.
+
 # Active V7: explicit A/B/C material procurement
 
 See [V7_SCOPE.md](V7_SCOPE.md) for the current formulation. Product B now has

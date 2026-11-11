@@ -1,0 +1,5 @@
+batch_id,policy,dispatch_month,arrival_month,products,materials,individual_quantities,rm_pallets,pm_pallets,material_pallets,purchase_cost_usd,material_order_lines
+ALL_2026-10,all_products,2026-10,2027-01,"B, C","B RM, B PM, C RM, C PM",B RM: 250000; B PM: 875000; C RM: 150000; C PM: 500000,400.0,275.0,675.0,2550000.0,4
+ALL_2026-12,all_products,2026-12,2027-03,"B, C","B RM, C RM, C PM",B RM: 50000; C RM: 50000; C PM: 1000000,100.0,200.0,300.0,900000.0,3
+ALL_2027-02,all_products,2027-02,2027-05,"B, C","B RM, B PM, C RM, C PM",B RM: 100000; B PM: 375000; C RM: 100000; C PM: 1500000,200.0,375.0,575.0,1750000.0,4
+ALL_2027-03,all_products,2027-03,2027-06,"B, C","B RM, B PM, C RM",B RM: 350000; B PM: 1125000; C RM: 250000,600.0,225.0,825.0,3450000.0,3

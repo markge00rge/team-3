@@ -27,7 +27,7 @@ def _procurement_warm_start(model, seconds=20):
         for var in candidate.find_component(name).values():
             level = pyo.value(var)
             var.fix(round(level) if var.is_integer() else max(0, level), skip_validation=True)
-    candidate.objective.set_value(candidate.additional_order_events)
+    candidate.objective.set_value(candidate.international_shipments)
     solver = pyo.SolverFactory("appsi_highs")
     solver.options["time_limit"] = seconds
     solver.options["mip_rel_gap"] = 0.0
@@ -41,7 +41,7 @@ def _procurement_warm_start(model, seconds=20):
         for key, var in component.items():
             if other[key].value is not None:
                 var.set_value(other[key].value, skip_validation=True)
-    return float(pyo.value(candidate.additional_order_events))
+    return float(pyo.value(candidate.international_shipments))
 
 
 def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, time_limit=120, progress=False, stage_callback=None) -> SolveOutcome:
@@ -73,7 +73,7 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
             solver.options["time_limit"] = time_limit
         expressions = [(f"service_{hub}", model.shortage_by_hub[hub]) for hub in model.priority_hubs]
         expressions.append(("modeled_cost", model.total_cost))
-        expressions.append(("international_order_events", model.additional_order_events))
+        expressions.append(("international_order_events", model.international_shipments))
         expressions.append(("procurement_quantity_tiebreak", model.procurement_tiebreak))
         # Cleanup only within tied event/quantity optima; all earlier locks stay.
         expressions.append(("cost_cleanup", model.total_cost))
@@ -88,7 +88,7 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
                 try:
                     events = _procurement_warm_start(model)
                     if progress:
-                        print(f"Schedule-fixed primal heuristic: {events} events; full scheduling decisions remain free", flush=True)
+                        print(f"Schedule-fixed primal heuristic: {events} shipments; full scheduling decisions remain free", flush=True)
                 except Exception as exc:
                     if progress:
                         print(f"Optional warm-start heuristic unavailable: {exc}", flush=True)
@@ -99,6 +99,8 @@ def solve_lexicographic(model, *, cost_tolerance=0.0, tee=False, solver=None, ti
             status = result.solver.status
             termination = result.solver.termination_condition
             stage = dict(name=name, status=str(status), termination=str(termination))
+            if name=='international_order_events':
+                stage.update(objective_metric='international_shipments',shipment_consolidation_policy=model.shipment_consolidation_policy)
             problem = result.problem[0] if hasattr(result, "problem") and len(result.problem) else None
             if problem is not None:
                 for key in ("lower_bound", "upper_bound"):
@@ -152,6 +154,8 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=Path("reports/v7"))
     parser.add_argument("--time-limit", type=float, default=120, help="Seconds per stage; nonoptimal stages are reported honestly")
     parser.add_argument("--tee", action="store_true")
+    from src.shipment_policy import POLICIES
+    parser.add_argument('--shipment-policy',choices=list(POLICIES),default='independent_materials')
     args = parser.parse_args()
     from src.data_loader import ROOT
     for name in ("v2", "v2_1", "v4", "v5", "v6"):
@@ -167,6 +171,7 @@ def main():
     if (args.output_dir/'solve_status.json').exists(): parser.error('Use a fresh directory; existing solver results are immutable.')
     from src.material_policy import planning_case
     data=planning_case(data)
+    data.rules['shipment_consolidation_policy']=args.shipment_policy
     model = build_model(data)
     print("V7 Scenario A only: explicit ABC materials; 12 months x 28 planning days", flush=True)
     outcome = solve_lexicographic(model, time_limit=args.time_limit, progress=True, tee=args.tee)

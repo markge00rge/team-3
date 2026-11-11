@@ -1,0 +1,75 @@
+{
+  "success": false,
+  "message": "international_order_events: aborted, maxTimeLimit; later stages not run; any exported incumbent is not fully lexicographic optimal.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 9865467.5,
+      "upper_bound": 9865467.5,
+      "relative_gap": 0.0,
+      "optimum": 9865467.5
+    },
+    {
+      "name": "international_order_events",
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "lower_bound": 4.0,
+      "upper_bound": 6.0,
+      "relative_gap": 0.3333333333333333,
+      "incumbent_objective": 6.0,
+      "incumbent_gap": 0.3333333333333333
+    }
+  ],
+  "minimum_cost": 9865467.5,
+  "cost_limit": 9865467.5,
+  "shipment_consolidation_policy": "per_product",
+  "international_shipments": 6,
+  "material_order_lines": 12,
+  "material_policy": "explicit_abc_v7",
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 56167.50000000001,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30300.000000000025,
+    "external_storage": 0.0,
+    "total_modeled": 9865467.5,
+    "operating_full_ide": 1215467.5,
+    "ide_overlap_adjustment": 0.0,
+    "operating_expenses": 1215467.5,
+    "a_materials": 0.0,
+    "c_materials": 3950000.0,
+    "b_materials": 4700000.0,
+    "total_delivery_cost": 9865467.5,
+    "dismissal": 0.0
+  }
+}

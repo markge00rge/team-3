@@ -36,6 +36,7 @@ def start(original=False):
                 st.session_state.history[Path(job["directory"]).name]=dict(
                     name=previous["name"],directory=job["directory"],has_solution=previous["has_solution"])
         cfg=original_scenario(st.session_state.source) if original else st.session_state.scenario.clone()
+        if original:cfg.shipment_consolidation_policy=st.session_state.get('original_shipment_policy','independent_materials')
         cfg.name=validate_name(st.session_state.get('original_run_name' if original else 'custom_run_name',''))
         if not original and "demand_error" in st.session_state:
             raise ValueError("Correct or reset invalid demand cells before optimizing")
@@ -141,6 +142,8 @@ def name_original():
     heading('VENUS / ORIGINAL CASE','Name your optimization run','Uses original source values plus the adopted V7 B opening stocks: 200,000 kg RM and 750,000 EA PM. Your custom draft is preserved.')
     from app.components.fields import run_name_input
     run_name_input('original_run_name')
+    from app.components.shipment_policy import selector
+    selector(original=True)
     name=st.session_state.get('original_run_name','')
     valid=True
     try:
@@ -164,7 +167,7 @@ def running():
     groups=[("Validating scenario",["validation"]),("Building the mathematical model",["building"]),
         ("Optimizing customer service",["service_H1","service_H2","service_H3"]),
         ("Optimizing monetary cost",["modeled_cost"]),
-        ("Minimizing procurement events and quantities",["international_order_events","procurement_quantity_tiebreak","cost_cleanup"]),
+        ("Minimizing international shipments and quantities",["international_order_events","procurement_quantity_tiebreak","cost_cleanup"]),
         ("Extracting and validating results",["extraction"]),("Saving local run history",['saving']),("Preparing the dashboard",["dashboard"])]
     finished=(Path(job["directory"])/"completion.json").exists()
     for title,names in groups:

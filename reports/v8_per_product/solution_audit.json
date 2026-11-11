@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "tolerance": 1e-05,
+  "constraints_checked": 13484,
+  "variables_checked": 7615,
+  "max_violation": 8.149072527885437e-10,
+  "violations": [],
+  "reported_monetary_cost": 9865467.5,
+  "reported_international_events": 12.0,
+  "reported_international_shipments": 6.0,
+  "shipment_consolidation_policy": "per_product",
+  "all_lexicographic_stages_optimal": false
+}

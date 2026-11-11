@@ -58,6 +58,7 @@ def audit_exported_schedule(data, directory, *, return_model=False):
     status=json.loads((directory/'solve_status.json').read_text())
     data.rules['legacy_v5']='total_delivery_cost' not in status.get('costs',{})
     data.rules['explicit_b_materials']=status.get('material_policy')=='explicit_abc_v7'
+    data.rules['shipment_consolidation_policy']=status.get('shipment_consolidation_policy','independent_materials')
     m = build_model(data)
     def read(name):
         return pd.read_csv(directory / f"{name}.csv")
@@ -96,6 +97,9 @@ def audit_exported_schedule(data, directory, *, return_model=False):
         assign(m.material_order[key], r.quantity)
         assign(m.integer_lots[key], r.integer_lots)
         assign(m.order_event[key], r.order_event)
+    if hasattr(m,'shipment_batch'):
+        for (g,t),var in m.shipment_batch.items():
+            assign(var,int(any(pyo.value(m.order_event[p,k,t])>0.5 for p,k in m.shipment_groups[g])))
     for r in read("production").itertuples():
         assign(m.production[r.line, r.product, r.month], r.msu)
     for r in read("inventory").itertuples():
@@ -128,12 +132,14 @@ def audit_exported_schedule(data, directory, *, return_model=False):
             hub = stage["name"].split("service_", 1)[1]
             m.exported_objective_locks.add(m.shortage_by_hub[hub] == stage["optimum"])
         if stage["termination"] == "optimal" and stage["name"] == "international_order_events":
-            m.exported_objective_locks.add(m.additional_order_events == stage["optimum"])
+            m.exported_objective_locks.add(m.international_shipments == stage["optimum"])
         if stage["termination"] == "optimal" and stage["name"] == "procurement_quantity_tiebreak":
             m.exported_objective_locks.add(m.procurement_tiebreak == stage["optimum"])
     result = audit_solution(m)
     result["reported_monetary_cost"] = pyo.value(m.total_cost)
     result["reported_international_events"] = pyo.value(m.additional_order_events)
+    result['reported_international_shipments']=pyo.value(m.international_shipments)
+    result['shipment_consolidation_policy']=m.shipment_consolidation_policy
     result["all_lexicographic_stages_optimal"] = status["success"]
     return (result, m) if return_model else result
 

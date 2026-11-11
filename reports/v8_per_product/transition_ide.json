@@ -1,0 +1,51 @@
+{
+  "qualification_start": {
+    "month": "2026-12",
+    "planning_day": 17,
+    "horizon_day": 73
+  },
+  "shutdown_days": [
+    {
+      "month": "2026-12",
+      "planning_day": 17,
+      "horizon_day": 73
+    },
+    {
+      "month": "2026-12",
+      "planning_day": 18,
+      "horizon_day": 74
+    },
+    {
+      "month": "2026-12",
+      "planning_day": 19,
+      "horizon_day": 75
+    }
+  ],
+  "c_first_production": {
+    "month": "2026-12",
+    "planning_day": 22,
+    "horizon_day": 78
+  },
+  "a_last_production": {
+    "month": "2026-12",
+    "planning_day": 15,
+    "horizon_day": 71
+  },
+  "a_fp_sellthrough_later_months_msu": 0.0,
+  "a_fp_shipments_in_transition_month_msu": 79.99999999999999,
+  "a_rm_consumed_before_kg": 115000.0,
+  "a_pm_consumed_before_ea": 575000.0,
+  "a_rm_before_scrap_kg": 0.0,
+  "a_pm_before_scrap_ea": 75000.00000000006,
+  "a_rm_scrap_kg": 0.0,
+  "a_pm_scrap_ea": 75000.00000000006,
+  "rm_scrap_value_usd": 0.0,
+  "pm_scrap_value_usd": 30000.000000000025,
+  "rm_disposal_usd": 0.0,
+  "pm_disposal_usd": 300.0000000000002,
+  "total_ide_usd": 30300.000000000025,
+  "base_salary_usd": 840000.0,
+  "new_salary_usd": 0.0,
+  "hiring_usd": 0.0,
+  "initial_l2_configuration": "A"
+}

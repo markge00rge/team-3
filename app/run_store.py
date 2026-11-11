@@ -15,7 +15,7 @@ from src.data_loader import ROOT
 SCHEMA_VERSION = 1
 CATEGORIES = ('Venus Case Study', 'General Plant')
 FINANCIAL_VERSION = 'venus-v7-abc-additional-purchases-1'
-MODEL_VERSION = 'Venus V7 / explicit ABC procurement / strict Scenario A'
+MODEL_VERSION = 'Venus V8 / configurable dispatch consolidation / strict Scenario A'
 
 
 class RunStoreError(ValueError):
@@ -105,6 +105,16 @@ def validate_record(record):
         if 'total_delivery_cost' in costs:
             total=math.fsum(costs[k] for k in ('operating_expenses','a_materials','c_materials','b_materials'))
             if abs(total-costs['total_delivery_cost'])>.01: raise ValueError('Financial KPIs do not reconcile')
+        if 'shipment_consolidation_policy' in completion:
+            from src.shipment_policy import POLICIES,shipment_schedule
+            policy=completion['shipment_consolidation_policy']
+            if policy not in POLICIES:raise ValueError('Unknown shipment policy')
+            orders=restore_frame(results['tables']['material_orders'])
+            schedule=restore_frame(results['tables']['international_shipment_schedule'])
+            expected=shipment_schedule(orders,policy,
+                rm_kg_per_pallet=effective['rules']['rm_kg_per_pallet'],pm_ea_per_pallet=effective['rules']['pm_ea_per_pallet'])
+            if completion['material_order_lines']!=int((orders.quantity>1e-5).sum()):raise ValueError('Material-order-line count does not reconcile')
+            if completion['international_shipments']!=len(expected) or len(schedule)!=len(expected):raise ValueError('Shipment count does not reconcile')
     except (KeyError,TypeError,ValueError) as exc:
         raise RunStoreError('Invalid saved run: '+str(exc)) from exc
     return True

@@ -27,6 +27,7 @@ def generate(data,directory):
     transition=json.loads((directory/'transition_ide.json').read_text())
     stages=pd.DataFrame(status['stages'])
     version='V7' if explicit else 'V6'
+    if 'shipment_consolidation_policy' in status:version='V8'
     text='\n'.join([f'# {version}: flexible crews and complete material financial objective','',
         f"All-stage optimality: **{status['success']}**. Minimum proven monetary value: {status.get('minimum_cost')}. Actual reported plan: ${status['costs']['total_delivery_cost']:,.2f}.",'',
         '## Solver status and bounds','',markdown(stages),'',
@@ -69,6 +70,12 @@ def generate(data,directory):
             comparison.to_csv(directory/'historical_v6_financial_definitions.csv',index=False)
             text+='\n## Historical V6 comparison — incompatible B accounting definitions\n\n'+markdown(comparison)+'\n\nV6 charged B production consumption. V7 charges only additional B orders and adopts prepaid opening B stock. This difference is not a like-for-like operating saving. Lot rounding can create paid terminal inventory. Original historical results are unchanged.\n'
         text+='\n## Monthly service by hub and family\n\n'+markdown(tables['service'])+'\n'
+    if 'shipment_consolidation_policy' in status:
+        from src.shipment_policy import POLICIES
+        policy=status['shipment_consolidation_policy']
+        text+='\n## International shipment consolidation\n\n'+POLICIES[policy][0]+'\n\n'
+        text+=f"Dispatch batches: {status['international_shipments']}; material order lines: {status['material_order_lines']}. These are dispatch occasions, not physical containers; no freight fee or container capacity is imposed. Policy 3 assumes a common consolidation hub.\n\n"
+        text+=markdown(pd.read_csv(directory/'international_shipment_schedule.csv',float_precision='round_trip'))+'\n'
     (directory/'ANALYSIS.md').write_text(text,encoding='utf-8')
     (directory/'FINANCIAL_RECONCILIATION.md').write_text(text,encoding='utf-8')
     marker = f'=== {version} FINANCIAL RECONCILIATION (generated) ==='

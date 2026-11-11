@@ -1,6 +1,6 @@
 """Versioned JSON scenario schema and explicit editable-field allowlist.
 
-Only normalized numeric inputs are stored. Original data always comes from
+Only normalized allowlisted inputs are stored. Original data always comes from
 load_case(); products, hubs, lines, families, dates and calendar stay locked.
 """
 from dataclasses import dataclass, asdict
@@ -47,6 +47,7 @@ class Scenario:
     schema_version: int
     name: str
     values: dict
+    shipment_consolidation_policy: str = 'independent_materials'
 
     def to_json(self):
         return json.dumps(asdict(self), indent=2, allow_nan=False)
@@ -54,7 +55,7 @@ class Scenario:
     @classmethod
     def from_json(cls, content):
         obj = json.loads(content, parse_constant=lambda x: (_ for _ in ()).throw(ValueError("Nonfinite JSON number")))
-        if not isinstance(obj,dict) or set(obj) != {"schema_version","name","values"}:
+        if not isinstance(obj,dict) or not {"schema_version","name","values"} <= set(obj) or set(obj)-{"schema_version","name","values","shipment_consolidation_policy"}:
             raise ValueError("Expected schema_version, name and values only")
         if type(obj["schema_version"]) is not int:
             raise ValueError("Scenario schema version must be an integer")
@@ -70,7 +71,7 @@ class Scenario:
                 values[f'price.{p}.RM']=scenario.values['rule.rm_usd_per_kg']
                 values[f'price.{p}.PM']=scenario.values['rule.pm_usd_per_ea']
             values['flexible_workforce']=False
-            scenario=cls(2,scenario.name,values)
+            scenario=cls(2,scenario.name,values,scenario.shipment_consolidation_policy)
         scenario.validate()
         return scenario
 
@@ -80,6 +81,9 @@ class Scenario:
         return copy
 
     def validate(self, source=None):
+        from src.shipment_policy import POLICIES
+        if not isinstance(self.shipment_consolidation_policy,str) or self.shipment_consolidation_policy not in POLICIES:
+            raise ValueError('Unsupported shipment consolidation policy')
         source = source or load_case()
         if self.schema_version not in (2,3) or isinstance(self.schema_version,bool):
             raise ValueError("Unsupported scenario schema version")
@@ -111,14 +115,17 @@ class Scenario:
 
     def changes(self, source=None):
         original = original_scenario(source,schema_version=self.schema_version).values
-        return pd.DataFrame([dict(parameter=k,original=original[k],modified=v)
-            for k,v in self.values.items() if v != original[k]], columns=["parameter","original","modified"])
+        rows=[dict(parameter=k,original=original[k],modified=v) for k,v in self.values.items() if v != original[k]]
+        if self.shipment_consolidation_policy!='independent_materials':
+            rows.append(dict(parameter='International Shipment Consolidation',original='independent_materials',modified=self.shipment_consolidation_policy))
+        return pd.DataFrame(rows,columns=['parameter','original','modified'])
 
     def to_case(self, source=None):
         source = source or load_case()
         self.validate(source)
         from src.material_policy import planning_case
         case = planning_case(source,explicit=self.schema_version>=3)
+        case.rules['shipment_consolidation_policy']=self.shipment_consolidation_policy
         for key,value in self.values.items():
             parts = key.split(".")
             kind = parts[0]
@@ -147,6 +154,7 @@ class Scenario:
         """Explicit conversion for a NEW run; never modifies stored results."""
         out=original_scenario()
         out.name=self.name
+        out.shipment_consolidation_policy=self.shipment_consolidation_policy
         out.values.update({k:v for k,v in self.values.items() if k in out.values})
         return out
 

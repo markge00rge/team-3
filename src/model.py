@@ -147,6 +147,8 @@ def build_model(data: CaseData, scenario: FixedScenario | None = None):
     m.event_lower = pyo.Constraint(m.material_products, m.materials, m.months,
         rule=lambda m, p, k, t: m.integer_lots[p, k, t] >= m.order_event[p, k, t])
     m.additional_order_events = pyo.Expression(expr=sum(m.order_event[key] for key in m.order_event))
+    from src.shipment_policy import add_shipment_policy
+    add_shipment_policy(m,data)
     # No pre-horizon invented orders, no purchases arriving beyond the horizon,
     # and no new A deliveries after its fixed production window closes.
     for p in m.material_products:

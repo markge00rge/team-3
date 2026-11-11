@@ -58,6 +58,8 @@ def manufacturing():
 
 
 def materials():
+    from app.components.shipment_policy import selector
+    selector()
     st.subheader('Product-specific material prices')
     for col,p in zip(st.columns(3),('A','B','C')):
         with col:
@@ -167,6 +169,8 @@ def distribution():
 
 
 def review(start):
+    from src.shipment_policy import POLICIES
+    st.info('International Shipment Consolidation: '+POLICIES[st.session_state.scenario.shipment_consolidation_policy][0])
     cfg=st.session_state.scenario
     from app.run_store import RunStore, RunStoreError, validate_name
     from app.components.fields import run_name_input

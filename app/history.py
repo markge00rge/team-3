@@ -124,10 +124,27 @@ def comparison_page():
             st.subheader(label); st.markdown('<div class="run-name">'+escape(r['name'])+'</div>',unsafe_allow_html=True)
             st.caption(f"{r['scenario_type']} · {r['created_at']} · {r['model_version']} · {r['financial_version']}")
             c=r['results']['completion']
+            from src.shipment_policy import POLICIES, historical_policy
+            policy=historical_policy(c,r['model_version'])
+            st.caption('International Shipment Consolidation: '+(POLICIES[policy][0] if policy else 'Legacy / Unknown Policy'))
+            st.write('International Shipments:',c.get('international_shipments','Not saved'), ' · Material Order Lines:',c.get('material_order_lines','Not saved'))
             st.caption('All stages optimal' if c['outcome']['success'] else c['outcome']['message'])
             if 'total_delivery_cost' in c['costs']: financial_cards(c['costs'],explicit_b=c.get('material_policy')=='explicit_abc_v7')
             else: st.info('Historical operating-only accounting. No Total Delivery Cost was saved.')
     for message in warnings(a,b): st.warning(message)
+    shipment_rows=[]
+    from src.shipment_policy import POLICIES,historical_policy
+    for r in (a,b):
+        c=r['results']['completion'];policy=historical_policy(c,r['model_version'])
+        _,saved_tables,_=unpack_results(r)
+        lines=int((saved_tables['material_orders'].quantity>1e-5).sum())
+        stage=next((s for s in c['outcome']['stages'] if s['name']=='international_order_events'),{})
+        shipment_rows.append(dict(scenario=r['name'],policy=POLICIES[policy][0] if policy else 'Legacy / Unknown Policy',
+            international_shipments=c.get('international_shipments',lines if policy=='independent_materials' else None),
+            material_order_lines=lines,termination=stage.get('termination'),lower_bound=stage.get('lower_bound'),
+            relative_gap=stage.get('incumbent_gap',stage.get('relative_gap'))))
+    st.subheader('Shipment counts and proof status')
+    table(pd.DataFrame(shipment_rows))
     compatible=a['financial_version']==b['financial_version']
     financial=financial_comparison(a,b)
     changes=changed_inputs(a,b)

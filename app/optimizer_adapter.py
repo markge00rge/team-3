@@ -59,6 +59,12 @@ def execute(scenario: Scenario, directory, *, time_limit=180, notify=None, scena
         for name,frame in derived.items(): frame.to_csv(directory / f"{name}.csv",index=False)
         completion.update(has_solution=True,costs=results.costs,
             reconciliation=financial.diagnostics,baseline=validated_baseline())
+        from src.shipment_policy import POLICIES
+        completion.update(shipment_consolidation_policy=results.shipment_consolidation_policy,
+            shipment_policy_name=POLICIES[results.shipment_consolidation_policy][0],
+            international_shipments=len(results.international_shipment_schedule),
+            material_order_lines=int((results.material_orders.quantity>1e-5).sum()),
+            shipment_stage=next((s for s in outcome.stages if s['name']=='international_order_events'),None))
         # Publish an immutable, self-contained DB snapshot only after both audits.
         # A storage failure does not discard a valid solve or claim it was saved.
         from app.run_store import RunStore, make_record, MODEL_VERSION, FINANCIAL_VERSION

@@ -1,0 +1,75 @@
+{
+  "success": false,
+  "message": "international_order_events: aborted, maxTimeLimit; later stages not run; any exported incumbent is not fully lexicographic optimal.",
+  "stages": [
+    {
+      "name": "service_H1",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H2",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "service_H3",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 0.0,
+      "upper_bound": 0.0,
+      "relative_gap": 0.0,
+      "optimum": 0.0
+    },
+    {
+      "name": "modeled_cost",
+      "status": "ok",
+      "termination": "optimal",
+      "lower_bound": 9865467.5,
+      "upper_bound": 9865467.5,
+      "relative_gap": 0.0,
+      "optimum": 9865467.5
+    },
+    {
+      "name": "international_order_events",
+      "status": "aborted",
+      "termination": "maxTimeLimit",
+      "lower_bound": 1.0000000000000004,
+      "upper_bound": 4.0,
+      "relative_gap": 0.7499999999999999,
+      "incumbent_objective": 4.0,
+      "incumbent_gap": 0.7499999999999999
+    }
+  ],
+  "minimum_cost": 9865467.5,
+  "cost_limit": 9865467.5,
+  "shipment_consolidation_policy": "all_products",
+  "international_shipments": 4,
+  "material_order_lines": 14,
+  "material_policy": "explicit_abc_v7",
+  "costs": {
+    "labor": 840000.0,
+    "fp_holding": 56167.500000000044,
+    "transportation": 289000.0,
+    "service_failure": 0.0,
+    "ide": 30299.99999999991,
+    "external_storage": 0.0,
+    "total_modeled": 9865467.5,
+    "operating_full_ide": 1215467.5,
+    "ide_overlap_adjustment": 0.0,
+    "operating_expenses": 1215467.5,
+    "a_materials": 0.0,
+    "c_materials": 3950000.0,
+    "b_materials": 4700000.0,
+    "total_delivery_cost": 9865467.5,
+    "dismissal": 0.0
+  }
+}

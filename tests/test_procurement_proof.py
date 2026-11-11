@@ -15,14 +15,14 @@ def tiny(required):
 
 def test_feasible_cap_is_candidate_not_minimum_certificate(tmp_path):
     m=tiny(2)
-    result=check_cap(m,2,seconds=10,log_path=tmp_path/'feasible.log')
+    result=check_cap(m,2,seconds=10,log_path=tmp_path/'feasible.log',threads=0)
     assert result['has_solution'] and result['audit']['passed']
     assert result['events']==2 and result['monetary_cost']==100
     assert all(not v.fixed for v in m.events.values())
 
 
 def test_one_fewer_event_proven_infeasible(tmp_path):
-    result=check_cap(tiny(2),1,seconds=10,log_path=tmp_path/'infeasible.log')
+    result=check_cap(tiny(2),1,seconds=10,log_path=tmp_path/'infeasible.log',threads=0)
     assert result['termination']=='infeasible'
     assert not result['has_solution']
 
